@@ -1,8 +1,8 @@
-
+﻿
 #include <windows.h>        //	Utilizarea functiilor de sistem Windows (crearea de ferestre, manipularea fisierelor si directoarelor);
 #include <stdlib.h>         //  Biblioteci necesare pentru citirea shaderelor;
 #include <stdio.h>
-#include <GL/glew.h>        //  Define?te prototipurile functiilor OpenGL si constantele necesare pentru programarea OpenGL moderna; 
+#include <GL/glew.h>        //  Definește prototipurile functiilor OpenGL si constantele necesare pentru programarea OpenGL moderna; 
 #include <GL/freeglut.h>    //	Include functii pentru: 
 //	- gestionarea ferestrelor si evenimentelor de tastatura si mouse, 
 //  - desenarea de primitive grafice precum dreptunghiuri, cercuri sau linii, 
@@ -13,6 +13,8 @@
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include <vector>
+#include <math.h>
+#include <iostream>
 
 //  Identificatorii obiectelor de tip OpenGL;
 GLuint
@@ -33,7 +35,7 @@ myMatrix, resizeMatrix, matrTransl, matrScale1, matrScale2, matrRot, matrDepl;
 //	Variabile pentru proiectia ortogonala;
 float xMin = -400.0, xMax = 400.0f, yMin = -300.0f, yMax = 300.0f;
 #define PI 3.141592653
-int BALL_COUNT = 7;
+int BALL_COUNT = 7 ;
 int PT_COUNT = 16;
 
 float dim_patrat = 30.0f;
@@ -46,21 +48,21 @@ class Ball
 {
 public:
 	float r; // raza bilei (fiza in cazul nostru)
-	float px = 0, py = 0; // pozitia (centrul bilei la un moment dat)
+	glm::vec2 position; // pozitia (centrul bilei la un moment dat)
 	// pozitia initiala este data prin constructor (x_, y_)
-	float vx = 0, vy = 0; // viteza (deplasarea la fiecare randare)
+	glm::vec2 v; // viteza (deplasarea la fiecare randare)
 	int nrPuncte; // numarul de pucnte de pe cerc din care este "alcauit" cercul
 	bool isRendered = true; // daca afisam bila sau nu (pentru cazul in care sunt introduse in gauri - cum simulam ca "dispar" de pe masa?
-	glm::mat4 matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(px, py, 0.0)); // matricea de deplasare 
+	glm::mat4 matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0)); // matricea de deplasare 
 
 	// constructor
 	Ball(float r_, float x_, float y_, int nrPuncte_, float vx_, float vy_) {
 		r = r_;
-		px = x_;
-		py = y_;
+		position.x = x_;
+		position.y = y_;
 		nrPuncte = nrPuncte_;
-		vx = vx_;
-		vy = vy_;
+		v.x = vx_;
+		v.y = vy_;
 
 		UpdateTranslationMatrix();
 	}
@@ -79,11 +81,11 @@ public:
 	}
 
 	void UpdateTranslationMatrix() {
-		matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(px, py, 0.0));
+		matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0));
 	}
 
 	float distance(Ball otherBall) {
-		return sqrt(pow(px - otherBall.px, 2) + pow(py - otherBall.py, 2));
+		return sqrt(pow(position.x - otherBall.position.x, 2) + pow(position.y - otherBall.position.y, 2));
 	}
 
 };
@@ -105,30 +107,44 @@ std::vector<Ball> bile = createBalls();
 
 
 void rotateBall(float angle, int i) {
-
-	float vxOld = bile[i].vx, vyOld = bile[i].vy;
-	bile[i].vx = vxOld * glm::cos(angle) - vyOld * glm::sin(angle);
-	bile[i].vy = vxOld * glm::sin(angle) + vyOld * glm::cos(angle);
+	float vxOld = bile[i].v.x, vyOld = bile[i].v.y;
+	bile[i].v.x = vxOld * cos(angle) - vyOld * sin(angle);
+	bile[i].v.y = vxOld * sin(angle) + vyOld * cos(angle);
+	//std::cout << "Dupa rotire: " << bile[i].vx << " " << bile[i].vy;
 }
 
 void check2DCollisions() {
 	for (int i = 0; i < BALL_COUNT - 1; i++) {
 		for (int j = i + 1; j < BALL_COUNT; j++) {
-			if (bile[i].distance(bile[j]) <= bile[i].r + bile[j].r) { // echivalent cu 2 * bile[i].r
+			float minDist = bile[i].r + bile[j].r, dist = bile[i].distance(bile[j]);
+			//std::cout << "Distanta dintre bile: " << dist << " suma razelor: " << minDist << std::endl;
+			if (dist < minDist) { // echivalent cu 2 * bile[i].r
 
 				// unghiul dat de dreapta care uneste centrele celor doua bile si Ox
-				float theta = glm::atan((bile[j].py - bile[i].py) / (bile[j].px - bile[i].px));
-				// TODO: transforma vx, vy in vector (pentru a aplica mai usor transformari)
-				// rotatie de unghi theta aplicata componentelor vitezei (pt ambele bile)
-				rotateBall(theta, i);
-				rotateBall(theta, j);
+				float theta = atan2((bile[j].position.y - bile[i].position.y), (bile[j].position.x - bile[i].position.x));
+				//std::cout << "theta = " << theta << std::endl;
 
-				// aplicam formulele pt coliziunea elastica 1D pe componenta vx
-				float t = bile[i].vx; bile[i].vx = bile[j].vx; bile[j].vx = t;
+				float overlap = (minDist - dist) / 2.0f + 1.0f;
+				glm::vec2 separation = { overlap * cos(theta), overlap * sin(theta) };
+				/*float separateX = overlap * cos(theta);
+				float separateY = overlap * sin(theta);*/
+				bile[i].position -= separation;
+				bile[j].position += separation;
 
-				// rotatia de unghi -theta (pt a aduce vectorul la orientarea initiala)
+				// rotatie de unghi -theta aplicata componentelor vitezei (pt ambele bile)
 				rotateBall(-theta, i);
 				rotateBall(-theta, j);
+
+				// aplicam formulele pt coliziunea elastica 1D pe componenta vx
+				std::swap(bile[i].v.x, bile[j].v.x);
+
+				// rotatia de unghi theta (pt a aduce vectorul la orientarea initiala)
+				rotateBall(theta, i);
+				rotateBall(theta, j);
+				
+
+				/*std::cout << "Bila " << i << " DUPA COLIZIUNE : " << bile[i].vx << " " << bile[i].vy << std::endl;
+				std::cout << "Bila " << j << " DUPA COLIZIUNE : " << bile[j].vx << " " << bile[j].vy << std::endl;*/
 
 			}
 		}
@@ -141,28 +157,26 @@ void IdleFunction() {
 	for (int i = 0; i < BALL_COUNT; i++) {
 
 		//TODO: functie separata pentru coliziunile cu bounding box / pereti
-		bile[i].px += bile[i].vx;
-		bile[i].py += bile[i].vy;
+		bile[i].position.x += bile[i].v.x;
+		bile[i].position.y += bile[i].v.y;
 
-		if (bile[i].px + bile[i].r > xMax) {
-			bile[i].px = xMax - bile[i].r;
-			bile[i].vx = -bile[i].vx;
+		if (bile[i].position.x + bile[i].r > xMax) {
+			bile[i].position.x = xMax - bile[i].r;
+			bile[i].v.x = -bile[i].v.x;
 		}
-		else if (bile[i].px - bile[i].r < xMin) {
-			bile[i].px = xMin + bile[i].r;
-			bile[i].vx = -bile[i].vx;
-		}
-
-		if (bile[i].py + bile[i].r > yMax) {
-			bile[i].py = yMax - bile[i].r;
-			bile[i].vy = -bile[i].vy;
-		}
-		else if (bile[i].py - bile[i].r < yMin) {
-			bile[i].py = yMin + bile[i].r;
-			bile[i].vy = -bile[i].vy;
+		else if (bile[i].position.x - bile[i].r < xMin) {
+			bile[i].position.x = xMin + bile[i].r;
+			bile[i].v.x = -bile[i].v.x;
 		}
 
-		//bile[i].UpdateTranslationMatrix();
+		if (bile[i].position.y + bile[i].r > yMax) {
+			bile[i].position.y = yMax - bile[i].r;
+			bile[i].v.y = -bile[i].v.y;
+		}
+		else if (bile[i].position.y - bile[i].r < yMin) {
+			bile[i].position.y = yMin + bile[i].r;
+			bile[i].v.y = -bile[i].v.y;
+		}
 	}
 
 	check2DCollisions();
@@ -197,24 +211,15 @@ void CreateShaders(void)
 void CreateVBO(void)
 {
 	//  Coordonatele varfurilor;
-	int size = 8 + (BALL_COUNT * PT_COUNT * 4);
+	int size = BALL_COUNT * PT_COUNT * 4;
 	GLfloat* Vertices = new GLfloat[size];
 
-	Vertices[0] = xMin; Vertices[1] = 0.0f; Vertices[2] = 0.0f; Vertices[3] = 1.0f;
-	Vertices[4] = xMax; Vertices[5] = 0.0f; Vertices[6] = 0.0f; Vertices[7] = 1.0f;
-
-	int start_idx = 8;
-
-
+	int start_idx = 0;
 	for (int i = 0; i < BALL_COUNT; i++)
 		bile[i].AddVertices(Vertices, start_idx);
 
 	//	Culorile ca atribute ale varfurilor;
-	static const GLfloat Colors[] =
-	{
-		0.0f, 0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 0.0f, 1.0f,
-	};
+	static const GLfloat Colors[] ={1.0f, 1.0f, 1.0f, 1.0f};
 
 	//  Se creeaza / se leaga un VAO (Vertex Array Object) - util cand se utilizeaza mai multe VBO;
 	glGenVertexArrays(1, &VaoId);                                                   //  Generarea VAO si indexarea acestuia catre variabila VaoId;
@@ -291,18 +296,6 @@ void RenderFunction(void)
 // matrScale1 = glm::scale(glm::mat4(1.0f), glm::vec3(1.1, 0.3, 0.0));			//	Se scaleaza coordonatele initiale si se obtine dreptunghiul ALABSTRU;
 // matrScale2 = glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.0));		//	Se scaleaza coordonatele initiale si se obtine patratul ROSU;
 // matrRot = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0, 0.0, 1.0));	//	Roatie folosita la deplasarea patratului ROSU;
-
-
-//	Transmiterea variabilei uniforme pentru MATRICEA DE TRANSFORMARE spre shadere;
-
-// desenez axa
-	myMatrix = resizeMatrix;
-	glLineWidth(2.0);
-	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-	codCol = 0;
-	glUniform1i(codColLocation, codCol);
-	glDrawArrays(GL_LINES, 0, 2);
-
 
 	// DESENEZ BILE
 	for (int i = 0; i < BALL_COUNT; i++)
