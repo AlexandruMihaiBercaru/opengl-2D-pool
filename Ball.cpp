@@ -3,7 +3,7 @@
 
 // constructor
 Ball::Ball(int codCol_, float x_, float y_, float vx_, float vy_) {
-	codCol = codCol;
+	codCol = codCol_;
 	position.x = x_;
 	position.y = y_;
 	v.x = vx_;

@@ -14,10 +14,11 @@
 
 class Ball
 {
-	int codCol;
 	bool isRendered = true; // daca afisam bila sau nu (pentru cazul in care sunt introduse in gauri - cum simulam ca "dispar" de pe masa?
 
 public:
+	int codCol=3;
+
 	static int nrPuncte; // numarul de puncte de pe cerc din care este "alcatuit" cercul
 	static float r;// raza bilei (fiza in cazul nostru) dar toate bilele sunt la fel
 	//acceleration variables here when it's done

@@ -40,7 +40,6 @@ int BALL_COUNT = 7;
 float dim_patrat = 30.0f;
 int codCol;
 
-Ball* whiteBall  = NULL;
 
 std::vector<Ball> createBalls() {
 	std::vector<Ball> balls;
@@ -55,6 +54,7 @@ std::vector<Ball> createBalls() {
 	return balls;
 }
 std::vector<Ball> bile = createBalls();
+Ball* whiteBall = NULL;
 
 
 
@@ -81,6 +81,7 @@ static void check2DCollisions() {
 				bile[j].rotateBall(-theta);
 
 				// aplicam formulele pt coliziunea elastica 1D pe componenta vx
+				std::swap(bile[i].v.x, bile[j].v.x);
 
 
 
@@ -254,14 +255,21 @@ void RenderFunction(void)
 
 	// DESENEZ BILE
 
+	//voi incerca sa mai modific aici
+
 	for (int i = 0; i < BALL_COUNT; i++)
 	{
 		myMatrix = resizeMatrix * bile[i].matrTransl;
 		glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-		if (i % 2 == 0) codCol = 1;
-		else codCol = 2;
+		//Bilele ar trebui sa aiba culoarea drept camp intern
+	/*	if (i % 2 == 0) codCol = 1;
+		else codCol = 2;*/
+
+
+		codCol = bile[i].codCol;
+		auto var = bile[i];
 		glUniform1i(codColLocation, codCol);
-		glDrawArrays(GL_TRIANGLE_FAN, 2 + i * bile.size(), Ball::nrPuncte);
+		glDrawArrays(GL_TRIANGLE_FAN, i * bile.size(), Ball::nrPuncte);
 	}
 
 	glutSwapBuffers();	//	Inlocuieste imaginea deseneata in fereastra cu cea randata; 
