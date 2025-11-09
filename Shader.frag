@@ -22,15 +22,17 @@ void main(void)
   {
     switch(codCol)
     {
-        case 0:
+        case 0: //NoChange
             out_Color = ex_Color;
             break;
-        case 1:
+        case 1://Red
             out_Color = vec4(1.0, 0.0, 0.0, 1.0);
             break;
-        case 2:
+        case 2: //LightBlue
             out_Color = vec4(0.0, 1.0, 1.0, 1.0);
             break;
+        case 3: //White
+            out_Color = vec4(1.0, 1.0, 1.0, 1.0);
         default:
             out_Color = ex_Color;
             break;

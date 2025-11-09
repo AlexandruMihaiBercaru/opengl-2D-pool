@@ -1,0 +1,10 @@
+#gitignore
+
+include
+lib
+src
+x64
+*.vcxproj
+*vcxproj*
+*.filters
+*.user
