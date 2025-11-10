@@ -20,7 +20,6 @@ void Cue::SetBall(Ball* wBall) {
 }
 
 
-
 /// <summary>
 /// Gets angle between a given coordonate and the white ball
 /// </summary>
@@ -68,18 +67,19 @@ void Cue::BringToBall() {
 void Cue::startHit() {
 	isHitting = true;
 	direction = glm::normalize(wBall->position - position);
+	std::cout << direction.x << " " << direction.y;
 }
 
 bool Cue::updateHit() {
 	if (!isHitting) return false;
 
-	position += direction * 0.1f;
+	position += direction * 0.01f;
 
 	float stoppingDistance = Ball::r + length / 2.0;
 	float currentDistance = glm::length(position - wBall->position);
 
 	if (currentDistance <= stoppingDistance) {
-		wBall->v = direction * 0.9f;
+		wBall->v = direction * 0.8f;
 		isHitting = false;
 		stoppedHitting = true;
 
