@@ -19,7 +19,7 @@ class Ball
 	//idee 2 (mai greu) -> tot setam viteza + acceleratia la 0, dar acum o rotim pe loc sa simuleze ca a cazut intr-un tunel of sorts
 	//idee 3 ->o facem aurie sau ceva sa iasa in evidenta
 public:
-	bool isRendered = true;
+	bool isInHole = false;
 	int codCol=3;
 
 	static int nrPuncte; // numarul de puncte de pe cerc din care este "alcatuit" cercul

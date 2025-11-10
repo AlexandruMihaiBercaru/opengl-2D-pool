@@ -130,9 +130,10 @@ Cue cue(500.0f, 14.0f, 0.0f, -250.0f);
 /// Rotim bilele as needed
 /// </summary>
 static void check2DCollisions() {
+	float minDist = 2 * Ball::r + 1.0f;
+
 	for (int i = 0; i < BALL_COUNT - 1; i++) {
 		for (int j = i + 1; j < BALL_COUNT; j++) {
-			float minDist = 2 * Ball::r;
 			float dist = bile[i].distance(bile[j]);
 			//std::cout << "Distanta dintre bile: " << dist << " suma razelor: " << minDist << std::endl;
 			if (dist < minDist) {
@@ -168,6 +169,9 @@ static void check2DCollisions() {
 	}
 }
 
+
+static int score = 0;
+
 static void CheckBallsInHoles() {
 	float holeRadius = 30.0f, ballRadius = Ball::r;
 	std::vector<glm::vec2> centreGauri = {
@@ -179,15 +183,22 @@ static void CheckBallsInHoles() {
 		{0.0, -0.51 * 300.0},
 	};
 	for (Ball& b : bile) {
+		if (b.isInHole)continue;
+
 		for (glm::vec2 centru : centreGauri) {
 			float dist = glm::length(b.position - centru);
 
 			if (dist <= holeRadius) {
-				b.isRendered = false; // hopa! a intrat (re-John:ador)
+				/*b.isRendered = false;*/ // hopa! a intrat (re-John:ador)
+				b.v = glm::vec2(0, 0);
+				b.isMoving = false;
 				if (&b == whiteBall) {
-					whiteBall->isRendered = true;
-					whiteBall->position = glm::vec2(-200, 0);
-					whiteBall->v = glm::vec2(0, 0);
+					b.position = glm::vec2(-200, 0);
+				}
+				else {
+					b.position = glm::vec2(-50 + score * 30.0f, 250.0f);
+					b.isInHole = true;
+
 				}
 			}
 		}
@@ -201,6 +212,7 @@ static void CheckBallsInHoles() {
 static void CheckCollisionEdges() {
 	for(Ball& bila : bile)
 	{
+		if (bila.isInHole)continue;
 		//Bila se deplaseaza
 		bila.position += bila.v;
 
@@ -557,11 +569,13 @@ void RenderFunction(void)
 	glDrawElements(GL_TRIANGLES, IndexCount, GL_UNSIGNED_INT, 0);
 
 
+
+
 	// DESENEZ BILE
 	glBindVertexArray(VaoId);
 	for (int i = 0; i < BALL_COUNT; i++)
 	{
-		if (!bile[i].isRendered) continue;
+		//if (!bile[i].isInHole) continue;
 		myMatrix = resizeMatrix * bile[i].matrTransl;
 		glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
