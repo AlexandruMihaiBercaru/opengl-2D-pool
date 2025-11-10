@@ -40,10 +40,7 @@ public:
 	/// </summary>
 	void BringToBall();
 
-	/// <summary>
-	/// O functie ce cred va fi integrata in render function, aici ar fi trigonometria de calcul + desenat tacul in unghi in jurul bilei
-	/// </summary>
-	void RotateAroundBall();
+
 	/// <summary>
 	/// ChargeBar? Sau macar adagam ceva sa amplificam sau nu lovitura (optional)
 	/// </summary>
@@ -55,7 +52,21 @@ public:
 	void Hit();
 
 
+	/// <summary>
+	/// Gets angle between a given coordonate and the white ball
+	/// </summary>
+	/// <param name="pos">Position X,Y</param>
+	/// <returns>Angle</returns>
 	float GetBallAngle(glm::vec2 pos);
 
+
+
+	/// <summary>
+	/// Given the angle and distance desired, gives back the position of where the cue should be
+	/// in relation to the white ball.
+	/// </summary>
+	/// <param name="angle">Angle of drawing</param>
+	/// <param name="dist">Distance between tip of cue and white ball</param>
+	/// <returns>Position X,Y of where the center of the cue should be </returns>
 	glm::vec2 PosToAngle(float angle,float dist);
 };
