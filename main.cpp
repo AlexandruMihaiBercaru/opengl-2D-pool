@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <GL/glew.h>        //  Definește prototipurile functiilor OpenGL si constantele necesare pentru programarea OpenGL moderna; 
 #include <GL/freeglut.h>    //	Include functii pentru: 
-//	- gestionarea ferestrelor si evenimentelor de tastatura si mouse, 
+//	- gestionarea ferestrelor si evenime ntelor de tastatura si mouse, 
 //  - desenarea de primitive grafice precum dreptunghiuri, cercuri sau linii, 
 //  - crearea de meniuri si submeniuri;
 #include "loadShaders.h"	//	Fisierul care face legatura intre program si shadere;
@@ -69,7 +69,7 @@ std::vector<Ball> createBalls() {
 }
 std::vector<Ball> bile = createBalls();
 
-Cue cue(500.0f, 14.0f, 0.0f, -250.0f, &bile[6]);
+Cue cue(500.0f, 14.0f, 0.0f, -250.0f);
 
 /// <summary>
 /// Verificam daca 2 bile au coliziune
@@ -82,8 +82,7 @@ static void check2DCollisions() {
 			float minDist = 2 * Ball::r;
 			float dist = bile[i].distance(bile[j]);
 			//std::cout << "Distanta dintre bile: " << dist << " suma razelor: " << minDist << std::endl;
-			if (dist < minDist) { // echivalent cu 2 * bile[i].r
-
+			if (dist < minDist) {
 
 
 				// unghiul dat de dreapta care uneste centrele celor doua bile si Ox
@@ -118,7 +117,6 @@ static void check2DCollisions() {
 }
 
 
-bool startAnimation = true;
 
 /// <summary>
 /// Deplasarea virtuala a bilelor.
@@ -156,12 +154,15 @@ static void UpdateAllTranslationMatrix() {
 		bila.UpdateTranslationMatrix();
 }
 
+bool startAnimation = false;
+
 static void IdleFunction() {
 	//std::cout << startAnimation << std::endl;
 	if (cue.isHitting) {
 
 		bool hit = cue.updateHit();
 		if (hit) {
+			cue.position = glm::vec2(0.0f, -250.0f); cue.angle = 0.0f;
 			startAnimation = true;
 		}
 	}
@@ -191,14 +192,13 @@ static void IdleFunction() {
 		cue.stoppedHitting = false;
 		startAnimation = false;
     
-		glClearColor(0.75f, 1.0f, 1.0f, 1.0f);
+		//glClearColor(0.75f, 1.0f, 1.0f, 1.0f);
 		std::cout << "STOPPED\n"; // de completat cu controlul rundelor
 		
 		cue.BringToBall();
 		cue.canRotate = true;
 	}
 	
-
 	UpdateAllTranslationMatrix();
 
 	glutPostRedisplay();
@@ -218,16 +218,12 @@ void UseMouse(int button, int state, int x, int y)
 				dragStartPos = worldCoords;
 				cueStartPos = cue.position;
 			}
-			//else {
-			//	startAnimation = true;
-			//}
 		}
 		else if (state == GLUT_UP) {
 			if (cue.isDragged) {
 				cue.isDragged = false;
 			}
 		}
-	case GLUT_RIGHT_BUTTON:
 			
 		break;
 	case GLUT_RIGHT_BUTTON:
@@ -247,12 +243,10 @@ void MouseMotion(int x, int y) {
 		cue.angle = angle;
 		cue.position = cue.PosToAngle(angle, 10.0f);
 		std::cout <<"Angle = " <<angle << '\n';
-		
 
 		glutPostRedisplay();
 
 	}
-
 
 	if (cue.isDragged) {
 		glm::vec2 worldPos = screenToWorld(glm::vec2(x, y));
@@ -421,10 +415,6 @@ void RenderFunction(void)
 	{
 		myMatrix = resizeMatrix * bile[i].matrTransl;
 		glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-		//Bilele ar trebui sa aiba culoarea drept camp intern
-	/*	if (i % 2 == 0) codCol = 1;
-		else codCol = 2;*/
-
 
 		codCol = bile[i].codCol;
 		auto var = bile[i];

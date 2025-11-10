@@ -39,17 +39,11 @@ void Ball::rotateBall(float angle) {
 
 	v.x = standardized_vec.x;
 	v.y = standardized_vec.y;
-
-	/*float vxOld = v.x;
-	float vyOld = v.y;
-	v.x = vxOld * cos(angle) - vyOld * sin(angle);
-	v.y = vxOld * sin(angle) + vyOld * cos(angle);*/
-	//std::cout << "Dupa rotire: " << bile[i].vx << " " << bile[i].vy;
 }
 
 void Ball::UpdateTranslationMatrix() {
 
-	matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0));
+	matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(position, 0.0));
 }
 
 float Ball::distance(const Ball& otherBall) {

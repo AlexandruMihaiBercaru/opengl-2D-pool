@@ -63,10 +63,7 @@ void Cue::BringToBall() {
 }
 
 
-void Cue::RotateAroundBall() {
-
-
-}
+//void Cue::RotateAroundBall() {}
 
 void Cue::startHit() {
 	isHitting = true;
