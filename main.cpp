@@ -154,7 +154,7 @@ static void UpdateAllTranslationMatrix() {
 		bila.UpdateTranslationMatrix();
 }
 
-bool startAnimation = false;
+bool startAnimation = true;
 
 static void IdleFunction() {
 	//std::cout << startAnimation << std::endl;
@@ -227,7 +227,7 @@ void UseMouse(int button, int state, int x, int y)
 			
 		break;
 	case GLUT_RIGHT_BUTTON:
-		if (state == GLUT_DOWN) {
+		if (state == GLUT_DOWN && !whiteBall->isMoving) {
 			cue.startHit();
 		}
 		break;
@@ -237,6 +237,8 @@ void UseMouse(int button, int state, int x, int y)
 }
 
 void MouseMotion(int x, int y) {
+	if (whiteBall->isMoving)
+		return;
 	if (cue.canRotate) {
 		glm::vec2 worldPos = screenToWorld(glm::vec2(x, y));
 		float angle = cue.GetBallAngle(worldPos);
