@@ -42,7 +42,6 @@ int BALL_COUNT = 7;
 
 float dim_patrat = 30.0f;
 int codCol;
-bool anyMoves = false;
 
 
 //Pointer catre bila alba, may be usefull
@@ -131,7 +130,7 @@ static void check2DCollisions() {
 bool startAnimation = false;
 
 /// <summary>
-/// Deplasarea virtuala a bilelor, decelerare.
+/// Deplasarea virtuala a bilelor.
 /// Si ne asiguram ca bilele raman nu ies din limitele mesei (bounce back off edges)
 /// </summary>
 static void CheckCollisionEdges() {
@@ -172,6 +171,7 @@ static void IdleFunction() {
 
 	CheckCollisionEdges();
 	check2DCollisions();
+	bool anyMoves = false;
 
 	for (int i = 0; i < BALL_COUNT; i++) {
 		bile[i].UpdateTranslationMatrix(); // actualizeaza pozitia pentru noua randare
