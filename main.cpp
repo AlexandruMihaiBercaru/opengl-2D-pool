@@ -20,10 +20,9 @@
 #include "Cue.h"
 //  Identificatorii obiectelor de tip OpenGL;
 GLuint
-VaoId,
-VaoId2,
-VboId, VboId2,
-EboId, EboId2,
+VaoId, VaoId2, VaoId3,
+VboId, VboId2, VboId3,
+EboId, EboId2, EboId3,
 ColorBufferId, ColorBufferId2,
 ProgramId,
 codColLocation,
@@ -33,19 +32,73 @@ GLfloat
 winWidth = 800, winHeight = 600;
 //	Variabile catre matricile de transformare;
 glm::mat4
-myMatrix, resizeMatrix, matrTransl, matrScale1, matrScale2, matrRot, matrDepl;
+myMatrix, resizeMatrix, matrTransl, matrScale1, matrScale2, matrRot, matrDepl, normalMatrix;
 
 //	Variabile pentru proiectia ortogonala;
 float xMin = -400.0, xMax = 400.0f, yMin = -300.0f, yMax = 300.0f;
-
+GLsizei IndexCount;
 int BALL_COUNT = 7;
-
-float dim_patrat = 30.0f;
 int codCol;
 
 //Pointer catre bila alba, may be usefull
 //Initializat in Initialize()
 Ball* whiteBall = NULL;
+
+struct Vertex {
+	GLfloat x, y, z, w;
+	GLfloat r, g, b, a;
+};
+
+std::vector<Vertex> vertices;
+std::vector<GLuint> indices;
+
+// Functie pentru a adauga un dreptunghi
+void addRectangle(float x1, float y1, float x2, float y2, glm::vec4 color) {
+	GLuint start = vertices.size();
+	vertices.push_back({ x1, y1, 0, 1, color.r, color.g, color.b, color.a });
+	vertices.push_back({ x2, y1, 0, 1, color.r, color.g, color.b, color.a });
+	vertices.push_back({ x2, y2, 0, 1, color.r, color.g, color.b, color.a });
+	vertices.push_back({ x1, y2, 0, 1, color.r, color.g, color.b, color.a });
+
+	indices.push_back(start);
+	indices.push_back(start + 1);
+	indices.push_back(start + 2);
+	indices.push_back(start);
+	indices.push_back(start + 2);
+	indices.push_back(start + 3);
+}
+
+// Functie pentru a adauga un trapez
+void addTrapezoid(glm::vec2 a1, glm::vec2 a2, glm::vec2 b2, glm::vec2 b1, glm::vec4 color) {
+	GLuint start = vertices.size();
+	vertices.push_back({ a1.x, a1.y, 0, 1, color.r, color.g, color.b, color.a });
+	vertices.push_back({ a2.x, a2.y, 0, 1, color.r, color.g, color.b, color.a });
+	vertices.push_back({ b2.x, b2.y, 0, 1, color.r, color.g, color.b, color.a });
+	vertices.push_back({ b1.x, b1.y, 0, 1, color.r, color.g, color.b, color.a });
+	indices.push_back(start);
+	indices.push_back(start + 1);
+	indices.push_back(start + 2);
+	indices.push_back(start);
+	indices.push_back(start + 2);
+	indices.push_back(start + 3);
+}
+
+// Functie pentru a adauga un cerc
+void addCircle(float cx, float cy, float r, glm::vec4 color, int segments = 40) {
+	GLuint start = vertices.size();
+	vertices.push_back({ cx, cy, 0, 1, color.r, color.g, color.b, color.a });
+	for (int i = 0; i <= segments; i++) {
+		float angle = i * 2.0f * 3.1415926f / segments;
+		float x = cx + r * cos(angle);
+		float y = cy + r * sin(angle);
+		vertices.push_back({ x, y, 0, 1, color.r, color.g, color.b, color.a });
+	}
+	for (int i = 1; i <= segments; i++) {
+		indices.push_back(start);
+		indices.push_back(start + i);
+		indices.push_back(start + i + 1);
+	}
+}
 
 glm::vec2 dragStartPos, cueStartPos;
 
@@ -107,7 +160,6 @@ static void check2DCollisions() {
 				bile[i].rotateBall(theta);
 				bile[j].rotateBall(theta);
 
-
 				/*std::cout << "Bila " << i << " DUPA COLIZIUNE : " << bile[i].vx << " " << bile[i].vy << std::endl;
 				std::cout << "Bila " << j << " DUPA COLIZIUNE : " << bile[j].vx << " " << bile[j].vy << std::endl;*/
 
@@ -116,7 +168,25 @@ static void check2DCollisions() {
 	}
 }
 
-
+static void CheckBallsInHoles() {
+	float holeRadius = 20.0f, ballRadius = Ball::r;
+	std::vector<glm::vec2> centreGauri = {
+		{-0.82 * 400.0, 0.51 * 300.0},
+		{0.82 * 400.0,  0.51 * 300.0},
+		{-0.82 * 400.0, -0.51 * 300.0},
+		{0.82 * 400.0, -0.51 * 300.0},
+		{0.0, 0.51 * 300.0},
+		{0.0, -0.51 * 300.0},
+	};
+	for (Ball& b : bile) {
+		for (glm::vec2 centru : centreGauri) {
+			float dist = glm::length(b.position - centru);
+			if (dist <= holeRadius) {
+				b.isRendered = false; // hopa! a intrat 
+			}
+		}
+	}
+}
 
 /// <summary>
 /// Deplasarea virtuala a bilelor.
@@ -129,21 +199,21 @@ static void CheckCollisionEdges() {
 		bila.position += bila.v;
 
 		//Bouncing off walls
-		if (bila.position.x + Ball::r >= xMax) {
-			bila.position.x = xMax - Ball::r;
+		if (bila.position.x + Ball::r >= 0.81f * 400.0) {
+			bila.position.x = 0.81f * 400.0 - Ball::r;
 			bila.v.x = -bila.v.x * 0.9f;
 		}
-		else if (bila.position.x - Ball::r <= xMin) {
-			bila.position.x = xMin + Ball::r;
+		else if (bila.position.x - Ball::r <= -0.81f * 400.0) {
+			bila.position.x = -0.81f * 400.0 + Ball::r;
 			bila.v.x = -bila.v.x * 0.9f;
 		}
 
-		if (bila.position.y + Ball::r >= yMax) {
-			bila.position.y = yMax - Ball::r;
+		if (bila.position.y + Ball::r >= 0.485f * 300.0) {
+			bila.position.y = 0.485f * 300.0 - Ball::r;
 			bila.v.y = -bila.v.y * 0.9f;
 		}
-		else if (bila.position.y - Ball::r <= yMin) {
-			bila.position.y = yMin + Ball::r;
+		else if (bila.position.y - Ball::r <= -0.485f * 300.0) {
+			bila.position.y = -0.485f * 300.0 + Ball::r;
 			bila.v.y = -bila.v.y * 0.9f;
 		}
 	}
@@ -170,7 +240,8 @@ static void IdleFunction() {
 	if (!startAnimation)
 		return;
 
-	CheckCollisionEdges();
+	CheckBallsInHoles();
+	CheckCollisionEdges(); // INCLUDE DEPLASAREA BILELOR
 	check2DCollisions();
 	bool anyMoves = false;
 
@@ -192,7 +263,6 @@ static void IdleFunction() {
 		cue.stoppedHitting = false;
 		startAnimation = false;
     
-		//glClearColor(0.75f, 1.0f, 1.0f, 1.0f);
 		std::cout << "STOPPED\n"; // de completat cu controlul rundelor
 		
 		cue.BringToBall();
@@ -243,7 +313,7 @@ void MouseMotion(int x, int y) {
 		glm::vec2 worldPos = screenToWorld(glm::vec2(x, y));
 		float angle = cue.GetBallAngle(worldPos);
 		cue.angle = angle;
-		cue.position = cue.PosToAngle(angle, 10.0f);
+		cue.position = cue.PosToAngle(angle, Ball::r);
 		std::cout <<"Angle = " <<angle << '\n';
 
 		glutPostRedisplay();
@@ -268,7 +338,7 @@ void CreateShaders(void)
 
 //  Se initializeaza un Vertex Buffer Object (VBO) pentru tranferul datelor spre memoria placii grafice (spre shadere);
 //  In acesta se stocheaza date despre varfuri (coordonate, culori, indici, texturare etc.);
-void CreateVBO(void)
+void CreateBalls(void)
 {
 	//  Coordonatele varfurilor;
 	// numar de bile * numar puncte per bila * 4 coordonate per punct
@@ -303,6 +373,65 @@ void CreateVBO(void)
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
+}
+
+void CreateTable(void) {
+	vertices.clear();
+	indices.clear();
+
+	glm::vec4 green(0.0f, 0.5f, 0.2f, 1.0f);
+	glm::vec4 brown(0.6f, 0.3f, 0.1f, 1.0f);
+	glm::vec4 black(0.0f, 0.0f, 0.0f, 1.0f);
+	glm::vec4 lightGreen(0.0f, 0.8f, 0.4f, 1.0f);
+
+	// Rama maro exterioară
+	addRectangle(-0.9f, -0.6f, 0.9f, 0.6f, brown); // stanga-jos si dreapta-sus
+
+	// Panza verde (zona centrala)
+	addRectangle(-0.83f, -0.51f, 0.83f, 0.51f, green);
+
+	// Margini verde deschis (trapeze)
+	// stanga
+	addTrapezoid({ -0.83f, 0.46f }, { -0.81f, 0.44f }, { -0.81f, -0.44f }, { -0.83f, -0.46f }, lightGreen);
+	// dreapta
+	addTrapezoid({ 0.83f, 0.46f }, { 0.81f, 0.44f }, { 0.81f, -0.44f }, { 0.83f, -0.46f }, lightGreen);
+	// sus - stanga
+	addTrapezoid({ -0.77f, 0.51f }, { -0.05f, 0.51f }, { -0.07f, 0.485f }, { -0.75f, 0.485f }, lightGreen);
+	// sus - dreapta
+	addTrapezoid({ 0.05f, 0.51f }, { 0.77f, 0.51f }, { 0.75f, 0.485f }, { 0.07f, 0.485f }, lightGreen);
+	// jos - stanga 
+	addTrapezoid({ -0.77f, -0.51f }, { -0.05f, -0.51f }, { -0.07f, -0.485f }, { -0.75f, -0.485f }, lightGreen);
+	// jos - dreapta 
+	addTrapezoid({ 0.05f, -0.51f }, { 0.77f, -0.51f }, { 0.75f, -0.485f }, { 0.07f, -0.485f }, lightGreen);
+
+	// Gauri negre
+	float rHole = 0.05f;
+	addCircle(-0.82f, 0.51f, rHole, black);   // stanga sus
+	addCircle(0.82f, 0.51f, rHole, black);    // dreapta sus
+	addCircle(-0.82f, -0.51f, rHole, black);  // stanga jos
+	addCircle(0.82f, -0.51f, rHole, black);   // dreapta jos
+	addCircle(0.0f, 0.51f, rHole, black);    // mijloc sus
+	addCircle(0.0f, -0.51f, rHole, black);   // mijloc jos
+
+	IndexCount = indices.size();
+
+	glGenVertexArrays(1, &VaoId3);
+	glBindVertexArray(VaoId3);
+
+	glGenBuffers(1, &VboId3);
+	glBindBuffer(GL_ARRAY_BUFFER, VboId3);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+	glGenBuffers(1, &EboId3);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EboId3);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(4 * sizeof(GLfloat)));
+
+	glBindVertexArray(0);
 }
 
 void CreateCue(void) 
@@ -368,11 +497,14 @@ void DestroyVBO(void)
 	glDeleteBuffers(1, &VboId2);
 	glDeleteBuffers(1, &ColorBufferId2);
 	glDeleteBuffers(1, &EboId2);
+	glDeleteBuffers(1, &VboId3);
+	glDeleteBuffers(1, &EboId3);
 
 	//  Eliberaea obiectelor de tip VAO;
 	glBindVertexArray(0);
 	glDeleteVertexArrays(1, &VaoId);
 	glDeleteVertexArrays(1, &VaoId2);
+	glDeleteVertexArrays(1, &VaoId3);
 
 }
 
@@ -390,14 +522,16 @@ void Initialize(void)
 	cue.SetBall(whiteBall);
 
 	glClearColor(0.082f, 0.36f, 0.08f, 1.0f);		//  Culoarea de fond a ecranului;
-	CreateVBO();								//  Trecerea datelor de randare spre bufferul folosit de shadere;
-	CreateCue(); // VAO pentru tac
+	CreateBalls();								//  Trecerea datelor de randare spre bufferul folosit de shadere;
+	CreateCue();								// VAO pentru tac
+	CreateTable();								// VAO pentru masa
 	CreateShaders();							//  Initilizarea shaderelor;
 	//	Instantierea variabilelor uniforme pentru a "comunica" cu shaderele;
 	myMatrixLocation = glGetUniformLocation(ProgramId, "myMatrix");
 	codColLocation = glGetUniformLocation(ProgramId, "codCol");
 	//	Dreptunghiul "decupat"; 
 	resizeMatrix = glm::ortho(xMin, xMax, yMin, yMax);
+	normalMatrix = glm::ortho(-1.0, 1.0, -1.0, 1.0);
 }
 
 //  Functia de desenarea a graficii pe ecran;
@@ -411,17 +545,24 @@ void RenderFunction(void)
 // matrScale2 = glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.0));		//	Se scaleaza coordonatele initiale si se obtine patratul ROSU;
 // matrRot = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0, 0.0, 1.0));	//	Roatie folosita la deplasarea patratului ROSU;
 
+	//DESENEZ MASA
+	glBindVertexArray(VaoId3);
+	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &normalMatrix[0][0]);
+	glDrawElements(GL_TRIANGLES, IndexCount, GL_UNSIGNED_INT, 0);
+
+
 	// DESENEZ BILE
 	glBindVertexArray(VaoId);
 	for (int i = 0; i < BALL_COUNT; i++)
 	{
+		if (!bile[i].isRendered) continue;
 		myMatrix = resizeMatrix * bile[i].matrTransl;
 		glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
 		codCol = bile[i].codCol;
 		auto var = bile[i];
 		glUniform1i(codColLocation, codCol);
-		glDrawArrays(GL_TRIANGLE_FAN, i * bile.size(), Ball::nrPuncte);
+		glDrawArrays(GL_TRIANGLE_FAN, i * Ball::nrPuncte, Ball::nrPuncte);
 	}
 
 	// DESENEZ TACUL
