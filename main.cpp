@@ -188,6 +188,7 @@ static void IdleFunction() {
 		glClearColor(0.082f, 0.36f, 0.08f, 1.0f);		//  Culoarea de fond a ecranului;
 		std::cout << "STOPPED"; // de completat cu controlul rundelor
 		cue.BringToBall();
+		cue.canRotate = true;
 	}
 	
 	UpdateAllTranslationMatrix();
@@ -218,7 +219,6 @@ void UseMouse(int button, int state, int x, int y)
 			}
 		}
 	case GLUT_RIGHT_BUTTON:
-		//cue.BringToBall();
 			
 		break;
 	default:
@@ -227,6 +227,19 @@ void UseMouse(int button, int state, int x, int y)
 }
 
 void MouseMotion(int x, int y) {
+	if (cue.canRotate) {
+		glm::vec2 worldPos = screenToWorld(glm::vec2(x, y));
+		float angle = cue.GetBallAngle(worldPos);
+		cue.angle = angle;
+		cue.position = cue.PosToAngle(angle, 10.0f);
+		std::cout <<"Angle = " <<angle << '\n';
+		
+
+		glutPostRedisplay();
+
+	}
+
+
 	if (cue.isDragged) {
 		glm::vec2 worldPos = screenToWorld(glm::vec2(x, y));
 		glm::vec2 delta = worldPos - dragStartPos;

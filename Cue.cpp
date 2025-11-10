@@ -21,13 +21,41 @@ void Cue::SetBall(Ball* wBall) {
 
 
 
-void Cue::BringToBall() {
-	float dist = 10.0f; // distanta arbitrara intre varful tacului si marginea bilei
+/// <summary>
+/// Gets angle between a given coordonate and the white ball
+/// </summary>
+/// <param name="pos">Position X,Y</param>
+/// <returns>Angle</returns>
+float Cue::GetBallAngle(glm::vec2 pos) {
+	glm::vec2 delta = pos - wBall->position;
+	return atan2(delta.y, delta.x);
+}
+
+
+/// <summary>
+/// Given the angle and distance desired, gives back the position of where the cue should be
+/// in relation to the white ball.
+/// </summary>
+/// <param name="angle">Angle of drawing</param>
+/// <param name="dist">Distance between tip of cue and white ball</param>
+/// <returns>Position X,Y of where the center of the cue should be </returns>
+glm::vec2 Cue::PosToAngle(float angle, float dist) {
+	//float dist = 10.0f; // distanta arbitrara intre varful tacului si marginea bilei
 	float radius = wBall->r;
-	float degrees = 160;
+	glm::vec2 coord;
+	coord.x = wBall->position.x + (dist + radius + this->length / 2) * glm::cos(angle);
+	coord.y = wBall->position.y + (dist + radius + this->length / 2) * glm::sin(angle);
+	return coord;
+}
+
+
+
+void Cue::BringToBall() {
+	///un numar arbitrar de grade
+	float degrees = 170;
 	this->angle = PI * degrees / 180.0f; // 180 grade = pi => 150 grade = pi*150/180
-	this->position.x = wBall->position.x + (dist + radius + this->length / 2) * glm::cos(angle);
-	this->position.y = wBall->position.y + (dist + radius + this->length / 2) * glm::sin(angle);
+	this->position = this->PosToAngle(angle,10.0f);
+
 
 /*	std::cout << angle << "unghi\n";
 	std::cout << wBall->position.x << " " << wBall->position.y << "=Bila \n";

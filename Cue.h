@@ -22,7 +22,11 @@ class Cue
 public:
 	float length, width; // dimensiunile bounding box-ului
 	float angle;
-	bool isDragged, isRotated;
+	bool isDragged;
+
+	//True when all no balls move
+	//False after hit
+	bool canRotate; 
 	glm::vec2 position; // coordonatele centrului
 	bool isMouseInsideBox(glm::vec2 mouseCoord);
 	Cue(float l_, float w_, float x, float y);
@@ -50,4 +54,8 @@ public:
 	/// </summary>
 	void Hit();
 
+
+	float GetBallAngle(glm::vec2 pos);
+
+	glm::vec2 PosToAngle(float angle,float dist);
 };
