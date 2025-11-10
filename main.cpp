@@ -41,7 +41,6 @@ int BALL_COUNT = 7;
 float dim_patrat = 30.0f;
 int codCol;
 
-
 class Cue
 {
 public:
@@ -71,68 +70,6 @@ glm::vec2 screenToWorld(glm::vec2 mouseCoord) {
 	return glm::vec2(worldX, worldY);
 }
 
-class Ball
-{
-public:
-	float r; // raza bilei (fiza in cazul nostru)
-	glm::vec2 position; // pozitia (centrul bilei la un moment dat)
-	// pozitia initiala este data prin constructor (x_, y_)
-	glm::vec2 v; // viteza (deplasarea la fiecare randare)
-	int nrPuncte; // numarul de pucnte de pe cerc din care este "alcauit" cercul
-	bool isRendered = true; // daca afisam bila sau nu (pentru cazul in care sunt introduse in gauri - cum simulam ca "dispar" de pe masa?
-	bool isMoving = false;
-	glm::mat4 matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0)); // matricea de deplasare 
-
-
-	// constructor
-	Ball(float r_, float x_, float y_, int nrPuncte_, float vx_, float vy_) {
-		r = r_;
-		position.x = x_;
-		position.y = y_;
-		nrPuncte = nrPuncte_;
-		v.x = vx_;
-		v.y = vy_;
-
-		if (v.x || v.y) isMoving = true;
-
-		UpdateTranslationMatrix();
-	}
-
-	~Ball() {}
-
-	void AddVertices(GLfloat Vertices[], int& start) {
-		for (int k = 0; k < nrPuncte; k++)
-		{
-			float theta = 2 * k * PI / nrPuncte;
-			float X = r * cos(theta), Y = r * sin(theta);
-
-			Vertices[start++] = X; Vertices[start++] = Y;
-			Vertices[start++] = 0.0f; Vertices[start++] = 1.0f;
-		}
-	}
-
-	void UpdateTranslationMatrix() {
-		matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0));
-	}
-
-	void updateMovementStatus() {
-		if (v.x < 0.001 && v.y < 0.001)
-			isMoving = false;
-		else
-			isMoving = true;
-	}
-
-	float distance(Ball otherBall) {
-		return sqrt(pow(position.x - otherBall.position.x, 2) + pow(position.y - otherBall.position.y, 2));
-	}
-
-	void applyFriction(float p) {
-		v = v * p;
-	}
-
-};
-
-
 std::vector<Ball> createBalls() {
 	std::vector<Ball> balls;
 	balls.emplace_back(Ball(1, 0.0, 0.0, 0.0, 0.0)); 
@@ -147,7 +84,6 @@ std::vector<Ball> createBalls() {
 }
 std::vector<Ball> bile = createBalls();
 Ball* whiteBall = NULL;
-
 
 
 static void check2DCollisions() {
@@ -174,9 +110,6 @@ static void check2DCollisions() {
 
 				// aplicam formulele pt coliziunea elastica 1D pe componenta vx
 				std::swap(bile[i].v.x, bile[j].v.x);
-
-
-
 
 				// rotatia de unghi theta (pt a aduce vectorul la orientarea initiala)
 				bile[i].rotateBall(theta);
