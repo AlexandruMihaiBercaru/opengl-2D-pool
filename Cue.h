@@ -21,7 +21,9 @@ class Cue
 public:
 	float length, width; // dimensiunile bounding box-ului
 	bool isDragged;
+	bool isHitting = false, stoppedHitting = false;;
 	glm::vec2 position; // coordonatele centrului
+	glm::vec2 direction;
 	bool isMouseInsideBox(glm::vec2 mouseCoord);
 	Cue(float l_, float w_, float x, float y, Ball* wBall);
 	/// <summary>
@@ -39,8 +41,11 @@ public:
 	void ChargeBar();
 
 	/// <summary>
-	/// Hit
+	/// Seteaza isHitting la true se triggeruieste deplasarea tacului
 	/// </summary>
-	void Hit();
+	void startHit();
+
+	// pentru fiecare frame, actualizeaza pozitia tacului, pana intalneste bila alba, apoi controlul este predat in IdleFunc
+	bool updateHit();
 
 };
