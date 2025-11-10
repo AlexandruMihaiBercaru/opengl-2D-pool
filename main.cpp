@@ -40,7 +40,6 @@ float xMin = -400.0, xMax = 400.0f, yMin = -300.0f, yMax = 300.0f;
 GLsizei IndexCount;
 int BALL_COUNT = 7;
 int codCol;
-std::vector<Ball*>points;
 //Pointer catre bila alba, may be usefull
 //Initializat in Initialize()
 Ball* whiteBall = NULL;
@@ -170,7 +169,7 @@ static void check2DCollisions() {
 	}
 }
 
-
+std::vector<int>pointIndexes;
 static int score = 0;
 
 static void CheckBallsInHoles() {
@@ -183,24 +182,25 @@ static void CheckBallsInHoles() {
 		{0.0, 0.51 * 300.0},
 		{0.0, -0.51 * 300.0},
 	};
-	for (Ball& b : bile) {
-		if (b.isInHole)continue;
+	for (int i = 0; i < bile.size();i++) {
+		if (bile[i].isInHole)continue;
 
 		for (glm::vec2 centru : centreGauri) {
-			float dist = glm::length(b.position - centru);
+			float dist = glm::length(bile[i].position - centru);
 
 			if (dist <= holeRadius) {
-				/*b.isRendered = false;*/ // hopa! a intrat (re-John:ador)
-				b.v = glm::vec2(0, 0);
-				b.isMoving = false;
-				if (&b == whiteBall) {
-					b.position = glm::vec2(-200, 0);
+				/*bile[i].isRendered = false;*/ // hopa! a intrat (re-John:ador)
+				bile[i].v = glm::vec2(0, 0);
+				bile[i].isMoving = false;
+				if (&bile[i] == whiteBall) {
+					bile[i].position = glm::vec2(-200, 0);
 				}
 				else {
-					b.position = glm::vec2(-50 + score * 30.0f, 250.0f);
-					b.isInHole = true;
-					points.push_back(&b);
+					bile[i].position = glm::vec2(-100 + score++ * 30.0f, 250.0f);
+					bile[i].isInHole = true;
+					pointIndexes.push_back(i);
 				}
+				break;
 			}
 		}
 	}
@@ -581,18 +581,16 @@ void RenderFunction(void)
 		glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
 		codCol = bile[i].codCol;
-		auto var = bile[i];
 		glUniform1i(codColLocation, codCol);
 		glDrawArrays(GL_TRIANGLE_FAN, i * Ball::nrPuncte, Ball::nrPuncte);
 	}
 
-	for (int i=0;i<points.size();i++){
-		myMatrix = resizeMatrix * (*points[i]).matrTransl;
+for(auto& index : pointIndexes){
+	myMatrix = resizeMatrix * bile[index].matrTransl;
 		glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-		codCol = (*points[i]).codCol;
-		auto var = (*points[i]);
+		codCol = bile[index].codCol;
 		glUniform1i(codColLocation, codCol);
-		glDrawArrays(GL_TRIANGLE_FAN, i * Ball::nrPuncte, Ball::nrPuncte);
+		glDrawArrays(GL_TRIANGLE_FAN, index * Ball::nrPuncte, Ball::nrPuncte);
 	}
 
 
