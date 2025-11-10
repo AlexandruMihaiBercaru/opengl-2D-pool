@@ -33,10 +33,17 @@ void Ball::AddVertices(GLfloat Vertices[], int& start) {
 //void rotateBall(float angle,int i) 
 
 void Ball::rotateBall(float angle) {
-	float vxOld = v.x;
+	glm::vec4 standardized_vec = { v, 0.0f, 0.0f };
+	glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0, 0.0, 1.0));
+	standardized_vec = standardized_vec * rotationMatrix;
+
+	v.x = standardized_vec.x;
+	v.y = standardized_vec.y;
+
+	/*float vxOld = v.x;
 	float vyOld = v.y;
 	v.x = vxOld * cos(angle) - vyOld * sin(angle);
-	v.y = vxOld * sin(angle) + vyOld * cos(angle);
+	v.y = vxOld * sin(angle) + vyOld * cos(angle);*/
 	//std::cout << "Dupa rotire: " << bile[i].vx << " " << bile[i].vy;
 }
 
@@ -54,7 +61,7 @@ void Ball::applyFriction(float p) {
 }
 
 void Ball::updateMovementStatus() {
-	if (v.x < 0.001 && v.y < 0.001)
+	if (abs(v.x) < 0.001 && abs(v.y) < 0.001)
 		isMoving = false;
 	else
 		isMoving = true;

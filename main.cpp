@@ -43,14 +43,9 @@ int BALL_COUNT = 7;
 float dim_patrat = 30.0f;
 int codCol;
 
-
 //Pointer catre bila alba, may be usefull
 //Initializat in Initialize()
 Ball* whiteBall = NULL;
-
-
-// necesare pentru deplasarea tacului in scena
-Cue cue(500.0f, 20.0f, 0.0f, -250.0f);
 
 glm::vec2 dragStartPos, cueStartPos;
 
@@ -63,19 +58,18 @@ glm::vec2 screenToWorld(glm::vec2 mouseCoord) {
 std::vector<Ball> createBalls() {
 	std::vector<Ball> balls;
 	balls.emplace_back(Ball(1, 0.0, 0.0, 0.0, 0.0)); 
-	balls.emplace_back(Ball(2, 15.0, -15.0, 0.0, 0.0));
-	balls.emplace_back(Ball(1, 15.0, 15.0, 0.0, 0.0));
-	balls.emplace_back(Ball(2, 30.0, -30.0, 0.0, 0.0));
-	balls.emplace_back(Ball(1, 30.0, 0.0, 0.0, 0.0));
-	balls.emplace_back(Ball(2, 30.0, 30.0, 0.0, 0.0));
-	balls.emplace_back(Ball(3, -200.0, 0.0, 0.3, 0.0));//bila alba
+	balls.emplace_back(Ball(2, 20.0, -10.0, 0.0, 0.0));
+	balls.emplace_back(Ball(1, 20.0, 10.0, 0.0, 0.0));
+	balls.emplace_back(Ball(2, 40.0, -20.0, 0.0, 0.0));
+	balls.emplace_back(Ball(1, 40.0, 0.0, 0.0, 0.0));
+	balls.emplace_back(Ball(2, 40.0, 20.0, 0.0, 0.0));
+	balls.emplace_back(Ball(3, -200.0, 0.0, 0.0, 0.0));//bila alba
 
 	return balls;
 }
 std::vector<Ball> bile = createBalls();
 
-
-
+Cue cue(500.0f, 14.0f, 0.0f, -250.0f, &bile[6]);
 
 /// <summary>
 /// Verificam daca 2 bile au coliziune
@@ -96,15 +90,12 @@ static void check2DCollisions() {
 				float theta = atan2((bile[j].position.y - bile[i].position.y), (bile[j].position.x - bile[i].position.x));
 				//std::cout << "theta = " << theta << std::endl;
 
-				float overlap = (minDist - dist) / 2.0f + 1.0f;
+				float overlap = (minDist - dist) / 2.0f;
 				glm::vec2 separation = { overlap * cos(theta), overlap * sin(theta) };
 				/*float separateX = overlap * cos(theta);
 				float separateY = overlap * sin(theta);*/
 				bile[i].position -= separation;
 				bile[j].position += separation;
-
-		
-
 
 				// rotatie de unghi -theta aplicata componentelor vitezei (pt ambele bile)
 				bile[i].rotateBall(-theta);
@@ -140,22 +131,22 @@ static void CheckCollisionEdges() {
 		bila.position += bila.v;
 
 		//Bouncing off walls
-		if (bila.position.x + Ball::r > xMax) {
+		if (bila.position.x + Ball::r >= xMax) {
 			bila.position.x = xMax - Ball::r;
-			bila.v.x = -bila.v.x;
+			bila.v.x = -bila.v.x * 0.9f;
 		}
-		else if (bila.position.x - Ball::r < xMin) {
+		else if (bila.position.x - Ball::r <= xMin) {
 			bila.position.x = xMin + Ball::r;
-			bila.v.x = -bila.v.x;
+			bila.v.x = -bila.v.x * 0.9f;
 		}
 
-		if (bila.position.y + Ball::r > yMax) {
+		if (bila.position.y + Ball::r >= yMax) {
 			bila.position.y = yMax - Ball::r;
-			bila.v.y = -bila.v.y;
+			bila.v.y = -bila.v.y * 0.9f;
 		}
-		else if (bila.position.y - Ball::r < yMin) {
+		else if (bila.position.y - Ball::r <= yMin) {
 			bila.position.y = yMin + Ball::r;
-			bila.v.y = -bila.v.y;
+			bila.v.y = -bila.v.y * 0.9f;
 		}
 	}
 }
@@ -166,6 +157,15 @@ static void UpdateAllTranslationMatrix() {
 }
 
 static void IdleFunction() {
+	//std::cout << startAnimation << std::endl;
+	if (cue.isHitting) {
+
+		bool hit = cue.updateHit();
+		if (hit) {
+			startAnimation = true;
+		}
+	}
+
 	if (!startAnimation)
 		return;
 
@@ -184,13 +184,21 @@ static void IdleFunction() {
 	// daca nicio bila nu se mai afla in miscare, atunci putem trece la urmatoarea runda
 	if (!anyMoves)
 	{
+		std::cout << "White ball X=" << whiteBall->position.x << " Vx=" << whiteBall->v.x << std::endl;
+		std::cout << "White ball Y=" << whiteBall->position.y << " Vy=" << whiteBall->v.y << std::endl;
+		whiteBall->v = glm::vec2(0.0, 0.0);
+		cue.isHitting = false;
+		cue.stoppedHitting = false;
 		startAnimation = false;
-		glClearColor(0.082f, 0.36f, 0.08f, 1.0f);		//  Culoarea de fond a ecranului;
-		std::cout << "STOPPED"; // de completat cu controlul rundelor
+    
+		glClearColor(0.75f, 1.0f, 1.0f, 1.0f);
+		std::cout << "STOPPED\n"; // de completat cu controlul rundelor
+		
 		cue.BringToBall();
 		cue.canRotate = true;
 	}
 	
+
 	UpdateAllTranslationMatrix();
 
 	glutPostRedisplay();
@@ -205,13 +213,14 @@ void UseMouse(int button, int state, int x, int y)
 	case GLUT_LEFT_BUTTON:
 		if (state == GLUT_DOWN) {
 			if (cue.isMouseInsideBox(worldCoords)) {
+				glClearColor(0.082f, 0.36f, 0.08f, 1.0f);
 				cue.isDragged = true;
 				dragStartPos = worldCoords;
 				cueStartPos = cue.position;
 			}
-			else {
-				startAnimation = true;
-			}
+			//else {
+			//	startAnimation = true;
+			//}
 		}
 		else if (state == GLUT_UP) {
 			if (cue.isDragged) {
@@ -220,6 +229,11 @@ void UseMouse(int button, int state, int x, int y)
 		}
 	case GLUT_RIGHT_BUTTON:
 			
+		break;
+	case GLUT_RIGHT_BUTTON:
+		if (state == GLUT_DOWN) {
+			cue.startHit();
+		}
 		break;
 	default:
 		break;

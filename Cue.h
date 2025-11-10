@@ -23,11 +23,13 @@ public:
 	float length, width; // dimensiunile bounding box-ului
 	float angle;
 	bool isDragged;
+	bool isHitting = false, stoppedHitting = false;;
 
 	//True when all no balls move
 	//False after hit
 	bool canRotate; 
 	glm::vec2 position; // coordonatele centrului
+	glm::vec2 direction;
 	bool isMouseInsideBox(glm::vec2 mouseCoord);
 	Cue(float l_, float w_, float x, float y);
 
@@ -47,9 +49,13 @@ public:
 	void ChargeBar();
 
 	/// <summary>
+	/// Seteaza isHitting la true si se triggeruieste deplasarea tacului
 	/// 
 	/// </summary>
-	void Hit();
+	void startHit();
+
+	// pentru fiecare frame, actualizeaza pozitia tacului, pana intalneste bila alba, apoi controlul este predat in IdleFunc
+	bool updateHit();
 
 
 	/// <summary>
