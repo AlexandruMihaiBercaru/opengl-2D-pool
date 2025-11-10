@@ -16,6 +16,7 @@
 #include <math.h>
 #include <iostream>
 #include "Ball.h"
+#include <memory.h> //no idea if i'll actually use it
 //  Identificatorii obiectelor de tip OpenGL;
 GLuint
 VaoId,
@@ -54,16 +55,27 @@ std::vector<Ball> createBalls() {
 	return balls;
 }
 std::vector<Ball> bile = createBalls();
+
+
+//Pointer catre bila alba, may be usefull
+//Initializat in Initialize()
 Ball* whiteBall = NULL;
 
 
-
+/// <summary>
+/// Verificam daca 2 bile au coliziune
+/// Calculam unghiul de coliziune elastica
+/// Rotim bilele as needed
+/// </summary>
 static void check2DCollisions() {
 	for (int i = 0; i < BALL_COUNT - 1; i++) {
 		for (int j = i + 1; j < BALL_COUNT; j++) {
-			float minDist =2*Ball::r, dist = bile[i].distance(bile[j]);
+			float minDist = 2 * Ball::r;
+			float dist = bile[i].distance(bile[j]);
 			//std::cout << "Distanta dintre bile: " << dist << " suma razelor: " << minDist << std::endl;
 			if (dist < minDist) { // echivalent cu 2 * bile[i].r
+
+
 
 				// unghiul dat de dreapta care uneste centrele celor doua bile si Ox
 				float theta = atan2((bile[j].position.y - bile[i].position.y), (bile[j].position.x - bile[i].position.x));
@@ -75,6 +87,9 @@ static void check2DCollisions() {
 				float separateY = overlap * sin(theta);*/
 				bile[i].position -= separation;
 				bile[j].position += separation;
+
+		
+
 
 				// rotatie de unghi -theta aplicata componentelor vitezei (pt ambele bile)
 				bile[i].rotateBall(-theta);
@@ -103,37 +118,55 @@ static void check2DCollisions() {
 bool startAnimation = false;
 
 
+/// <summary>
+/// Deplasarea virtuala a bilelor, decelerare.
+/// Si ne asiguram ca bilele raman nu ies din limitele mesei (bounce back off edges)
+/// </summary>
+static void CheckCollisionEdges() {
+	for(Ball& bila : bile)
+	{
+
+
+		//Bila se deplaseaza
+		bila.position.x += bila.v.x;
+		bila.position.y += bila.v.y;
+
+
+		//Bouncing off walls
+		if (bila.position.x + Ball::r > xMax) {
+			bila.position.x = xMax - Ball::r;
+			bila.v.x = -bila.v.x;
+		}
+		else if (bila.position.x - Ball::r < xMin) {
+			bila.position.x = xMin + Ball::r;
+			bila.v.x = -bila.v.x;
+		}
+
+		if (bila.position.y + Ball::r > yMax) {
+			bila.position.y = yMax - Ball::r;
+			bila.v.y = -bila.v.y;
+		}
+		else if (bila.position.y - Ball::r < yMin) {
+			bila.position.y = yMin + Ball::r;
+			bila.v.y = -bila.v.y;
+		}
+	}
+}
+
+static void UpdateAllTranslationMatrix() {
+	for (Ball& bila : bile)
+		bila.UpdateTranslationMatrix();
+}
+
 static void IdleFunction() {
 	if (!startAnimation)
 		return;
-	for (int i = 0; i < BALL_COUNT; i++) {
-
-		//TODO: functie separata pentru coliziunile cu bounding box / pereti
-		bile[i].position.x += bile[i].v.x;
-		bile[i].position.y += bile[i].v.y;
-
-		if (bile[i].position.x + Ball::r > xMax) {
-			bile[i].position.x = xMax - Ball::r;
-			bile[i].v.x = -bile[i].v.x;
-		}
-		else if (bile[i].position.x - Ball::r < xMin) {
-			bile[i].position.x = xMin + Ball::r;
-			bile[i].v.x = -bile[i].v.x;
-		}
-
-		if (bile[i].position.y + Ball::r > yMax) {
-			bile[i].position.y = yMax - Ball::r;
-			bile[i].v.y = -bile[i].v.y;
-		}
-		else if (bile[i].position.y - Ball::r < yMin) {
-			bile[i].position.y = yMin + Ball::r;
-			bile[i].v.y = -bile[i].v.y;
-		}
-	}
-
+	//am facut functie separata
+	CheckCollisionEdges();
 	check2DCollisions();
-	for (int i = 0; i < BALL_COUNT; i++)
-		bile[i].UpdateTranslationMatrix();
+
+	//E practic un wrapper
+	UpdateAllTranslationMatrix();
 
 	glutPostRedisplay();
 }
@@ -164,12 +197,11 @@ void CreateShaders(void)
 void CreateVBO(void)
 {
 	//  Coordonatele varfurilor;
+	// numar de bile * numar puncte per bila * 4 coordonate per punct
 	int size = BALL_COUNT * Ball::nrPuncte * 4;
 	GLfloat* Vertices = new GLfloat[size];
 
 	int start_idx = 0;
-	//GLfloat X,Y;
-	//why its not working here..wtf?
 	for (Ball& bila: bile) 
 		bila.AddVertices(Vertices, start_idx);
 	
@@ -232,7 +264,8 @@ void Cleanup(void)
 //  Setarea parametrilor necesari pentru fereastra de vizualizare;
 void Initialize(void)
 {
-	glClearColor(1.0f, 1.0f, 0.75f, 0.0f);		//  Culoarea de fond a ecranului;
+	whiteBall = &bile.back();
+	glClearColor(0.082f, 0.36f, 0.08f, 1.0f);		//  Culoarea de fond a ecranului;
 	CreateVBO();								//  Trecerea datelor de randare spre bufferul folosit de shadere;
 	CreateShaders();							//  Initilizarea shaderelor;
 	//	Instantierea variabilelor uniforme pentru a "comunica" cu shaderele;

@@ -40,6 +40,7 @@ void Ball::rotateBall(float angle) {
 }
 
 void Ball::UpdateTranslationMatrix() {
+
 	matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0));
 }
 
