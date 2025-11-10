@@ -8,6 +8,7 @@ Ball::Ball(int codCol_, float x_, float y_, float vx_, float vy_) {
 	position.y = y_;
 	v.x = vx_;
 	v.y = vy_;
+	if (v.x || v.y) isMoving = true;
 	UpdateTranslationMatrix();
 }
 
@@ -46,6 +47,17 @@ void Ball::UpdateTranslationMatrix() {
 
 float Ball::distance(const Ball& otherBall) {
 	return sqrt(pow(position.x - otherBall.position.x, 2) + pow(position.y - otherBall.position.y, 2));
+}
+
+void Ball::applyFriction(float p) {
+	v = v * p;
+}
+
+void Ball::updateMovementStatus() {
+	if (v.x < 0.001 && v.y < 0.001)
+		isMoving = false;
+	else
+		isMoving = true;
 }
 
 

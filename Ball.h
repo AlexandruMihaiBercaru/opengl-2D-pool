@@ -28,7 +28,9 @@ public:
 	//acceleration variables here when it's done
 	glm::vec2 position; // pozitia (centrul bilei la un moment dat)
 	glm::vec2 v; // viteza (deplasarea la fiecare randare)
-	glm::mat4 matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0)); // matricea de deplasare 
+	// pozitia initiala este data prin constructor (x_, y_)
+	bool isMoving = false;
+	glm::mat4 matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(position, 0.0)); // matricea de deplasare 
 
 	Ball(int codCol_, float x_, float y_, float vx_, float vy_);
 	~Ball();
@@ -36,4 +38,6 @@ public:
 	void AddVertices(GLfloat Vertices[], int& start);
 	void UpdateTranslationMatrix();
 	float distance(const Ball& otherBall);
+	void applyFriction(float p);
+	void updateMovementStatus();
 };
