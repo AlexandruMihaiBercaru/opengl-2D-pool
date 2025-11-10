@@ -38,8 +38,6 @@ myMatrix, resizeMatrix, matrTransl, matrScale1, matrScale2, matrRot, matrDepl, n
 float xMin = -400.0, xMax = 400.0f, yMin = -300.0f, yMax = 300.0f;
 GLsizei IndexCount;
 int BALL_COUNT = 7;
-
-float dim_patrat = 30.0f;
 int codCol;
 
 //Pointer catre bila alba, may be usefull
@@ -162,7 +160,6 @@ static void check2DCollisions() {
 				bile[i].rotateBall(theta);
 				bile[j].rotateBall(theta);
 
-
 				/*std::cout << "Bila " << i << " DUPA COLIZIUNE : " << bile[i].vx << " " << bile[i].vy << std::endl;
 				std::cout << "Bila " << j << " DUPA COLIZIUNE : " << bile[j].vx << " " << bile[j].vy << std::endl;*/
 
@@ -171,7 +168,25 @@ static void check2DCollisions() {
 	}
 }
 
-
+static void CheckBallsInHoles() {
+	float holeRadius = 20.0f, ballRadius = Ball::r;
+	std::vector<glm::vec2> centreGauri = {
+		{-0.82 * 400.0, 0.51 * 300.0},
+		{0.82 * 400.0,  0.51 * 300.0},
+		{-0.82 * 400.0, -0.51 * 300.0},
+		{0.82 * 400.0, -0.51 * 300.0},
+		{0.0, 0.51 * 300.0},
+		{0.0, -0.51 * 300.0},
+	};
+	for (Ball& b : bile) {
+		for (glm::vec2 centru : centreGauri) {
+			float dist = glm::length(b.position - centru);
+			if (dist <= holeRadius) {
+				b.isRendered = false; // hopa! a intrat 
+			}
+		}
+	}
+}
 
 /// <summary>
 /// Deplasarea virtuala a bilelor.
@@ -184,21 +199,21 @@ static void CheckCollisionEdges() {
 		bila.position += bila.v;
 
 		//Bouncing off walls
-		if (bila.position.x + Ball::r >= xMax) {
-			bila.position.x = xMax - Ball::r;
+		if (bila.position.x + Ball::r >= 0.81f * 400.0) {
+			bila.position.x = 0.81f * 400.0 - Ball::r;
 			bila.v.x = -bila.v.x * 0.9f;
 		}
-		else if (bila.position.x - Ball::r <= xMin) {
-			bila.position.x = xMin + Ball::r;
+		else if (bila.position.x - Ball::r <= -0.81f * 400.0) {
+			bila.position.x = -0.81f * 400.0 + Ball::r;
 			bila.v.x = -bila.v.x * 0.9f;
 		}
 
-		if (bila.position.y + Ball::r >= yMax) {
-			bila.position.y = yMax - Ball::r;
+		if (bila.position.y + Ball::r >= 0.485f * 300.0) {
+			bila.position.y = 0.485f * 300.0 - Ball::r;
 			bila.v.y = -bila.v.y * 0.9f;
 		}
-		else if (bila.position.y - Ball::r <= yMin) {
-			bila.position.y = yMin + Ball::r;
+		else if (bila.position.y - Ball::r <= -0.485f * 300.0) {
+			bila.position.y = -0.485f * 300.0 + Ball::r;
 			bila.v.y = -bila.v.y * 0.9f;
 		}
 	}
@@ -225,7 +240,8 @@ static void IdleFunction() {
 	if (!startAnimation)
 		return;
 
-	CheckCollisionEdges();
+	CheckBallsInHoles();
+	CheckCollisionEdges(); // INCLUDE DEPLASAREA BILELOR
 	check2DCollisions();
 	bool anyMoves = false;
 
@@ -247,7 +263,6 @@ static void IdleFunction() {
 		cue.stoppedHitting = false;
 		startAnimation = false;
     
-		//glClearColor(0.75f, 1.0f, 1.0f, 1.0f);
 		std::cout << "STOPPED\n"; // de completat cu controlul rundelor
 		
 		cue.BringToBall();
@@ -298,7 +313,7 @@ void MouseMotion(int x, int y) {
 		glm::vec2 worldPos = screenToWorld(glm::vec2(x, y));
 		float angle = cue.GetBallAngle(worldPos);
 		cue.angle = angle;
-		cue.position = cue.PosToAngle(angle, 10.0f);
+		cue.position = cue.PosToAngle(angle, Ball::r);
 		std::cout <<"Angle = " <<angle << '\n';
 
 		glutPostRedisplay();
@@ -540,13 +555,14 @@ void RenderFunction(void)
 	glBindVertexArray(VaoId);
 	for (int i = 0; i < BALL_COUNT; i++)
 	{
+		if (!bile[i].isRendered) continue;
 		myMatrix = resizeMatrix * bile[i].matrTransl;
 		glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
 		codCol = bile[i].codCol;
 		auto var = bile[i];
 		glUniform1i(codColLocation, codCol);
-		glDrawArrays(GL_TRIANGLE_FAN, i * bile.size(), Ball::nrPuncte);
+		glDrawArrays(GL_TRIANGLE_FAN, i * Ball::nrPuncte, Ball::nrPuncte);
 	}
 
 	// DESENEZ TACUL

@@ -79,7 +79,7 @@ bool Cue::updateHit() {
 	float currentDistance = glm::length(position - wBall->position);
 
 	if (currentDistance <= stoppingDistance) {
-		wBall->v = direction * 3.0f;
+		wBall->v = direction * 0.9f;
 		isHitting = false;
 		stoppedHitting = true;
 

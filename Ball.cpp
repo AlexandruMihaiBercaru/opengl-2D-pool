@@ -55,7 +55,7 @@ void Ball::applyFriction(float p) {
 }
 
 void Ball::updateMovementStatus() {
-	if (abs(v.x) < 0.001 && abs(v.y) < 0.001)
+	if (abs(v.x) < 0.005 && abs(v.y) < 0.005)
 		isMoving = false;
 	else
 		isMoving = true;
