@@ -14,8 +14,12 @@
 
 class Ball
 {
-	bool isRendered = true; // daca afisam bila sau nu (pentru cazul in care sunt introduse in gauri - cum simulam ca "dispar" de pe masa?
 
+	bool isRendered = true; // daca afisam bila sau nu (pentru cazul in care sunt introduse in gauri - cum simulam ca "dispar" de pe masa?
+	//re- cum simulam ca dispar de pe masa?
+	//idee 1 -> setam acceleratia si viteza la 0, apoi miscoram treptat bila (scadem raza treptat) si o desenam pana dispare
+	//idee 2 (mai greu) -> tot setam viteza + acceleratia la 0, dar acum o rotim pe loc sa simuleze ca a cazut intr-un tunel of sorts
+	//idee 3 ->o facem aurie sau ceva sa iasa in evidenta
 public:
 	int codCol=3;
 
