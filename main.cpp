@@ -18,6 +18,7 @@
 #include <memory.h> //no idea if i'll actually use it
 #include "Ball.h"
 #include "Cue.h"
+
 //  Identificatorii obiectelor de tip OpenGL;
 GLuint
 VaoId, VaoId2, VaoId3,
@@ -39,7 +40,7 @@ float xMin = -400.0, xMax = 400.0f, yMin = -300.0f, yMax = 300.0f;
 GLsizei IndexCount;
 int BALL_COUNT = 7;
 int codCol;
-
+std::vector<Ball*>points;
 //Pointer catre bila alba, may be usefull
 //Initializat in Initialize()
 Ball* whiteBall = NULL;
@@ -198,7 +199,7 @@ static void CheckBallsInHoles() {
 				else {
 					b.position = glm::vec2(-50 + score * 30.0f, 250.0f);
 					b.isInHole = true;
-
+					points.push_back(&b);
 				}
 			}
 		}
@@ -575,7 +576,7 @@ void RenderFunction(void)
 	glBindVertexArray(VaoId);
 	for (int i = 0; i < BALL_COUNT; i++)
 	{
-		//if (!bile[i].isInHole) continue;
+		if (bile[i].isInHole) continue;
 		myMatrix = resizeMatrix * bile[i].matrTransl;
 		glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
@@ -584,6 +585,16 @@ void RenderFunction(void)
 		glUniform1i(codColLocation, codCol);
 		glDrawArrays(GL_TRIANGLE_FAN, i * Ball::nrPuncte, Ball::nrPuncte);
 	}
+
+	for (int i=0;i<points.size();i++){
+		myMatrix = resizeMatrix * (*points[i]).matrTransl;
+		glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+		codCol = (*points[i]).codCol;
+		auto var = (*points[i]);
+		glUniform1i(codColLocation, codCol);
+		glDrawArrays(GL_TRIANGLE_FAN, i * Ball::nrPuncte, Ball::nrPuncte);
+	}
+
 
 	// DESENEZ TACUL
 	glBindVertexArray(VaoId2);
