@@ -10,6 +10,7 @@
 #include "glm/gtc/type_ptr.hpp"
 #include <math.h>
 #include "Ball.h"
+#include <iostream>
 #define PI 3.141592653
 
 
@@ -20,12 +21,18 @@ class Cue
 	Ball* wBall;
 public:
 	float length, width; // dimensiunile bounding box-ului
+	float angle;
 	bool isDragged;
 	glm::vec2 position; // coordonatele centrului
 	bool isMouseInsideBox(glm::vec2 mouseCoord);
-	Cue(float l_, float w_, float x, float y, Ball* wBall);
+	Cue(float l_, float w_, float x, float y);
+
+	void SetBall(Ball*);
+
 	/// <summary>
 	/// Luam bila din pozitia de repaus si o aducem (speram) smooth catre bila alba, cadrul de lovire
+	/// La unghi de ...idk..180 grade sa zicem trigonometric
+	/// De-a lungul unei translatii pe orizontala si verticala
 	/// </summary>
 	void BringToBall();
 
@@ -39,7 +46,7 @@ public:
 	void ChargeBar();
 
 	/// <summary>
-	/// Hit
+	/// 
 	/// </summary>
 	void Hit();
 

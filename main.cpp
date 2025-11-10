@@ -50,7 +50,7 @@ Ball* whiteBall = NULL;
 
 
 // necesare pentru deplasarea tacului in scena
-Cue cue(500.0f, 20.0f, 0.0f, -250.0f, NULL);
+Cue cue(500.0f, 20.0f, 0.0f, -250.0f);
 
 glm::vec2 dragStartPos, cueStartPos;
 
@@ -127,7 +127,7 @@ static void check2DCollisions() {
 }
 
 
-bool startAnimation = false;
+bool startAnimation = true;
 
 /// <summary>
 /// Deplasarea virtuala a bilelor.
@@ -187,6 +187,7 @@ static void IdleFunction() {
 		startAnimation = false;
 		glClearColor(0.75f, 1.0f, 1.0f, 1.0f);
 		std::cout << "STOPPED"; // de completat cu controlul rundelor
+		cue.BringToBall();
 	}
 	
 	UpdateAllTranslationMatrix();
@@ -294,7 +295,7 @@ void CreateCue(void)
 		0.55f, 0.45f, 0.1f, 1.0f,
 		0.55f, 0.45f, 0.1f, 1.0f,
 	};
-
+	cue.SetBall(whiteBall);
 	static const GLuint Indices2[] = {0, 1, 2, 3};
 
 	glGenVertexArrays(1, &VaoId2);         //  Generarea VAO si indexarea acestuia catre variabila VaoId2;
