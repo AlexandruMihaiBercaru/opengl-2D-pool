@@ -169,7 +169,7 @@ static void check2DCollisions() {
 }
 
 static void CheckBallsInHoles() {
-	float holeRadius = 20.0f, ballRadius = Ball::r;
+	float holeRadius = 30.0f, ballRadius = Ball::r;
 	std::vector<glm::vec2> centreGauri = {
 		{-0.82 * 400.0, 0.51 * 300.0},
 		{0.82 * 400.0,  0.51 * 300.0},
@@ -181,8 +181,14 @@ static void CheckBallsInHoles() {
 	for (Ball& b : bile) {
 		for (glm::vec2 centru : centreGauri) {
 			float dist = glm::length(b.position - centru);
+
 			if (dist <= holeRadius) {
-				b.isRendered = false; // hopa! a intrat 
+				b.isRendered = false; // hopa! a intrat (re-John:ador)
+				if (&b == whiteBall) {
+					whiteBall->isRendered = true;
+					whiteBall->position = glm::vec2(-200, 0);
+					whiteBall->v = glm::vec2(0, 0);
+				}
 			}
 		}
 	}
