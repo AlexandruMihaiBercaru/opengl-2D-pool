@@ -15,8 +15,9 @@
 #include <vector>
 #include <math.h>
 #include <iostream>
-#include "Ball.h"
 #include <memory.h> //no idea if i'll actually use it
+#include "Ball.h"
+#include "Cue.h"
 //  Identificatorii obiectelor de tip OpenGL;
 GLuint
 VaoId,
@@ -41,28 +42,17 @@ int BALL_COUNT = 7;
 
 float dim_patrat = 30.0f;
 int codCol;
+bool anyMoves = false;
 
-class Cue
-{
-public:
-	float length, width; // dimensiunile bounding box-ului
-	bool isDragged;
-	glm::vec2 position; // coordonatele centrului
 
-	bool isMouseInsideBox(glm::vec2 mouseCoord) {
-		float left = position.x - length / 2.0f;
-		float right = position.x + length / 2.0f;
-		float top = position.y + width / 2.0f;
-		float bottom = position.y - width / 2.0f;
-		return (mouseCoord.x >= left && mouseCoord.x <= right && mouseCoord.y >= bottom && mouseCoord.y <= top);
-	}
+//Pointer catre bila alba, may be usefull
+//Initializat in Initialize()
+Ball* whiteBall = NULL;
 
-	Cue(float l_, float w_, float x, float y) : length(l_), width(w_), position(x, y), isDragged(false) {}
-
-};
 
 // necesare pentru deplasarea tacului in scena
-Cue cue(500.0f, 20.0f, 0.0f, -250.0f);
+Cue cue(500.0f, 20.0f, 0.0f, -250.0f, NULL);
+
 glm::vec2 dragStartPos, cueStartPos;
 
 glm::vec2 screenToWorld(glm::vec2 mouseCoord) {
@@ -86,9 +76,6 @@ std::vector<Ball> createBalls() {
 std::vector<Ball> bile = createBalls();
 
 
-//Pointer catre bila alba, may be usefull
-//Initializat in Initialize()
-Ball* whiteBall = NULL;
 
 
 /// <summary>
