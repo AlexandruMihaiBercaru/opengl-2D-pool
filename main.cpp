@@ -127,7 +127,7 @@ static void check2DCollisions() {
 }
 
 
-bool startAnimation = true;
+bool startAnimation = false;
 
 /// <summary>
 /// Deplasarea virtuala a bilelor.
@@ -187,7 +187,6 @@ static void IdleFunction() {
 		startAnimation = false;
 		glClearColor(0.75f, 1.0f, 1.0f, 1.0f);
 		std::cout << "STOPPED"; // de completat cu controlul rundelor
-		cue.BringToBall();
 	}
 	
 	UpdateAllTranslationMatrix();
@@ -217,6 +216,8 @@ void UseMouse(int button, int state, int x, int y)
 				cue.isDragged = false;
 			}
 		}
+	case GLUT_RIGHT_BUTTON:
+		cue.BringToBall();
 			
 		break;
 	default:
@@ -295,7 +296,6 @@ void CreateCue(void)
 		0.55f, 0.45f, 0.1f, 1.0f,
 		0.55f, 0.45f, 0.1f, 1.0f,
 	};
-	cue.SetBall(whiteBall);
 	static const GLuint Indices2[] = {0, 1, 2, 3};
 
 	glGenVertexArrays(1, &VaoId2);         //  Generarea VAO si indexarea acestuia catre variabila VaoId2;
@@ -363,6 +363,8 @@ void Cleanup(void)
 void Initialize(void)
 {
 	whiteBall = &bile.back();
+	cue.SetBall(whiteBall);
+
 	glClearColor(0.082f, 0.36f, 0.08f, 1.0f);		//  Culoarea de fond a ecranului;
 	CreateVBO();								//  Trecerea datelor de randare spre bufferul folosit de shadere;
 	CreateCue(); // VAO pentru tac
@@ -405,6 +407,7 @@ void RenderFunction(void)
 	// DESENEZ TACUL
 	glBindVertexArray(VaoId2);
 	glm::mat4 cueTranslationMat = glm::translate(glm::mat4(1.0f), glm::vec3(cue.position, 0.0f));
+
 	myMatrix = resizeMatrix * cueTranslationMat;
 	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 	glUniform1i(codColLocation, 0);

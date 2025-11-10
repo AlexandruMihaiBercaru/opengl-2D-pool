@@ -23,13 +23,13 @@ void Cue::SetBall(Ball* wBall) {
 void Cue::BringToBall() {
 	float dist = 5.0f; // distanta arbitrara intre varful tacului si marginea bilei
 	float radius = wBall->r;
-	float degrees = 90;
+	float degrees = 160;
 	this->angle = PI * degrees / 180.0f; // 180 grade = pi => 150 grade = pi*150/180
 	this->position.x = wBall->position.x + (dist + radius + this->length / 2) * glm::cos(angle);
 	this->position.y = wBall->position.y + (dist + radius + this->length / 2) * glm::sin(angle);
 
-	//std::cout << unghi << "unghi\n";
-	//std::cout << wBall->position.x << " " << wBall->position.y << "=Bila \n";
-	//std::cout << this->position.x << " " << this->position.y << "=Cue \n";
+/*	std::cout << angle << "unghi\n";
+	std::cout << wBall->position.x << " " << wBall->position.y << "=Bila \n";
+	std::cout << this->position.x << " " << this->position.y << "=Cue \n";*/
 
 }
