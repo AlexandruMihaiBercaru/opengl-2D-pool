@@ -127,7 +127,7 @@ static void check2DCollisions() {
 }
 
 
-bool startAnimation = false;
+bool startAnimation = true;
 
 /// <summary>
 /// Deplasarea virtuala a bilelor.
@@ -185,8 +185,9 @@ static void IdleFunction() {
 	if (!anyMoves)
 	{
 		startAnimation = false;
-		glClearColor(0.75f, 1.0f, 1.0f, 1.0f);
+		glClearColor(0.082f, 0.36f, 0.08f, 1.0f);		//  Culoarea de fond a ecranului;
 		std::cout << "STOPPED"; // de completat cu controlul rundelor
+		cue.BringToBall();
 	}
 	
 	UpdateAllTranslationMatrix();
@@ -217,7 +218,7 @@ void UseMouse(int button, int state, int x, int y)
 			}
 		}
 	case GLUT_RIGHT_BUTTON:
-		cue.BringToBall();
+		//cue.BringToBall();
 			
 		break;
 	default:
@@ -407,12 +408,12 @@ void RenderFunction(void)
 	// DESENEZ TACUL
 	glBindVertexArray(VaoId2);
 	glm::mat4 cueTranslationMat = glm::translate(glm::mat4(1.0f), glm::vec3(cue.position, 0.0f));
-
-	myMatrix = resizeMatrix * cueTranslationMat;
+	glm::mat4 cueRotateMat = glm::rotate(glm::mat4(1.0f), cue.angle, glm::vec3(0.0, 0.0, 1.0));
+	myMatrix = resizeMatrix * cueTranslationMat*cueRotateMat;
 	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 	glUniform1i(codColLocation, 0);
 	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
-
+	myMatrix = resizeMatrix;
 	glutSwapBuffers();	//	Inlocuieste imaginea deseneata in fereastra cu cea randata; 
 	glFlush();								//  Asigura rularea tuturor comenzilor OpenGL apelate anterior;
 }

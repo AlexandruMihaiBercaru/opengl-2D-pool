@@ -22,7 +22,7 @@ class Cue
 public:
 	float length, width; // dimensiunile bounding box-ului
 	float angle;
-	bool isDragged;
+	bool isDragged, isRotated;
 	glm::vec2 position; // coordonatele centrului
 	bool isMouseInsideBox(glm::vec2 mouseCoord);
 	Cue(float l_, float w_, float x, float y);

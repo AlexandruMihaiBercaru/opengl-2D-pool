@@ -2,7 +2,7 @@
 
 
 
-Cue::Cue(float l_, float w_, float x, float y) : length(l_), width(w_), position(x, y), isDragged(false), wBall(NULL) {};
+Cue::Cue(float l_, float w_, float x, float y) : length(l_), width(w_), position(x, y), isDragged(false), wBall(NULL), canRotate(false) {};
 
 
 bool Cue::isMouseInsideBox(glm::vec2 mouseCoord) {
@@ -20,8 +20,9 @@ void Cue::SetBall(Ball* wBall) {
 }
 
 
+
 void Cue::BringToBall() {
-	float dist = 5.0f; // distanta arbitrara intre varful tacului si marginea bilei
+	float dist = 10.0f; // distanta arbitrara intre varful tacului si marginea bilei
 	float radius = wBall->r;
 	float degrees = 160;
 	this->angle = PI * degrees / 180.0f; // 180 grade = pi => 150 grade = pi*150/180
@@ -31,5 +32,10 @@ void Cue::BringToBall() {
 /*	std::cout << angle << "unghi\n";
 	std::cout << wBall->position.x << " " << wBall->position.y << "=Bila \n";
 	std::cout << this->position.x << " " << this->position.y << "=Cue \n";*/
+}
+
+
+void Cue::RotateAroundBall() {
+
 
 }
