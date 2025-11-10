@@ -19,9 +19,10 @@
 //  Identificatorii obiectelor de tip OpenGL;
 GLuint
 VaoId,
-VboId,
-EboId,
-ColorBufferId,
+VaoId2,
+VboId, VboId2,
+EboId, EboId2,
+ColorBufferId, ColorBufferId2,
 ProgramId,
 codColLocation,
 myMatrixLocation;
@@ -39,6 +40,97 @@ int BALL_COUNT = 7;
 
 float dim_patrat = 30.0f;
 int codCol;
+
+
+class Cue
+{
+public:
+	float length, width; // dimensiunile bounding box-ului
+	bool isDragged;
+	glm::vec2 position; // coordonatele centrului
+
+	bool isMouseInsideBox(glm::vec2 mouseCoord) {
+		float left = position.x - length / 2.0f;
+		float right = position.x + length / 2.0f;
+		float top = position.y + width / 2.0f;
+		float bottom = position.y - width / 2.0f;
+		return (mouseCoord.x >= left && mouseCoord.x <= right && mouseCoord.y >= bottom && mouseCoord.y <= top);
+	}
+
+	Cue(float l_, float w_, float x, float y) : length(l_), width(w_), position(x, y), isDragged(false) {}
+
+};
+
+// necesare pentru deplasarea tacului in scena
+Cue cue(500.0f, 20.0f, 0.0f, -250.0f);
+glm::vec2 dragStartPos, cueStartPos;
+
+glm::vec2 screenToWorld(glm::vec2 mouseCoord) {
+	float worldX = xMin + (mouseCoord.x / winWidth) * (xMax - xMin);
+	float worldY = yMax - (mouseCoord.y / winHeight) * (yMax - yMin);
+	return glm::vec2(worldX, worldY);
+}
+
+class Ball
+{
+public:
+	float r; // raza bilei (fiza in cazul nostru)
+	glm::vec2 position; // pozitia (centrul bilei la un moment dat)
+	// pozitia initiala este data prin constructor (x_, y_)
+	glm::vec2 v; // viteza (deplasarea la fiecare randare)
+	int nrPuncte; // numarul de pucnte de pe cerc din care este "alcauit" cercul
+	bool isRendered = true; // daca afisam bila sau nu (pentru cazul in care sunt introduse in gauri - cum simulam ca "dispar" de pe masa?
+	bool isMoving = false;
+	glm::mat4 matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0)); // matricea de deplasare 
+
+
+	// constructor
+	Ball(float r_, float x_, float y_, int nrPuncte_, float vx_, float vy_) {
+		r = r_;
+		position.x = x_;
+		position.y = y_;
+		nrPuncte = nrPuncte_;
+		v.x = vx_;
+		v.y = vy_;
+
+		if (v.x || v.y) isMoving = true;
+
+		UpdateTranslationMatrix();
+	}
+
+	~Ball() {}
+
+	void AddVertices(GLfloat Vertices[], int& start) {
+		for (int k = 0; k < nrPuncte; k++)
+		{
+			float theta = 2 * k * PI / nrPuncte;
+			float X = r * cos(theta), Y = r * sin(theta);
+
+			Vertices[start++] = X; Vertices[start++] = Y;
+			Vertices[start++] = 0.0f; Vertices[start++] = 1.0f;
+		}
+	}
+
+	void UpdateTranslationMatrix() {
+		matrTransl = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0));
+	}
+
+	void updateMovementStatus() {
+		if (v.x < 0.001 && v.y < 0.001)
+			isMoving = false;
+		else
+			isMoving = true;
+	}
+
+	float distance(Ball otherBall) {
+		return sqrt(pow(position.x - otherBall.position.x, 2) + pow(position.y - otherBall.position.y, 2));
+	}
+
+	void applyFriction(float p) {
+		v = v * p;
+	}
+
+};
 
 
 std::vector<Ball> createBalls() {
@@ -106,11 +198,13 @@ bool startAnimation = false;
 static void IdleFunction() {
 	if (!startAnimation)
 		return;
+
+	bool anyMoves = false;
+
 	for (int i = 0; i < BALL_COUNT; i++) {
 
 		//TODO: functie separata pentru coliziunile cu bounding box / pereti
-		bile[i].position.x += bile[i].v.x;
-		bile[i].position.y += bile[i].v.y;
+		bile[i].position += bile[i].v;
 
 		if (bile[i].position.x + Ball::r > xMax) {
 			bile[i].position.x = xMax - Ball::r;
@@ -132,8 +226,23 @@ static void IdleFunction() {
 	}
 
 	check2DCollisions();
-	for (int i = 0; i < BALL_COUNT; i++)
-		bile[i].UpdateTranslationMatrix();
+
+	// post-procesari
+	for (int i = 0; i < BALL_COUNT; i++) {
+		bile[i].UpdateTranslationMatrix(); // actualizeaza pozitia pentru noua randare
+		bile[i].applyFriction(0.999f); // reduce viteza
+		bile[i].updateMovementStatus();
+		anyMoves = anyMoves || bile[i].isMoving;
+		//std::cout << "Viteza bilei " << i << " este: " << bile[i].v.x << " " << bile[i].v.y << std::endl; 
+	}
+
+	// daca nicio bila nu se mai afla in miscare, atunci putem trece la urmatoarea runda
+	if (!anyMoves)
+	{
+		startAnimation = false;
+		glClearColor(0.75f, 1.0f, 1.0f, 1.0f);
+		std::cout << "STOPPED"; // de completat cu variabila care imi
+	}
 
 	glutPostRedisplay();
 }
@@ -142,13 +251,39 @@ static void IdleFunction() {
 
 void UseMouse(int button, int state, int x, int y)
 {
+	glm::vec2 worldCoords = screenToWorld(glm::vec2(x, y));
+
 	switch (button) {
 	case GLUT_LEFT_BUTTON:
-		if (state == GLUT_DOWN)
-			startAnimation = true;
+		if (state == GLUT_DOWN) {
+			if (cue.isMouseInsideBox(worldCoords)) {
+				cue.isDragged = true;
+				dragStartPos = worldCoords;
+				cueStartPos = cue.position;
+			}
+			else {
+				startAnimation = true;
+			}
+		}
+		else if (state == GLUT_UP) {
+			if (cue.isDragged) {
+				cue.isDragged = false;
+			}
+		}
+			
 		break;
 	default:
 		break;
+	}
+}
+
+void MouseMotion(int x, int y) {
+	if (cue.isDragged) {
+		glm::vec2 worldPos = screenToWorld(glm::vec2(x, y));
+		glm::vec2 delta = worldPos - dragStartPos;
+		cue.position = cueStartPos + delta;
+
+		glutPostRedisplay();
 	}
 }
 
@@ -199,6 +334,50 @@ void CreateVBO(void)
 
 }
 
+void CreateCue(void) 
+{
+	static const GLfloat Vertices2[] = {
+		-cue.length / 2.0f, -cue.width / 2.0f + 2, 0.0f, 1.0f,
+		-cue.length / 2.0f,  cue.width / 2.0f - 2, 0.0f, 1.0f,
+		 cue.length / 2.0f,  cue.width / 2.0f, 0.0f, 1.0f,
+		 cue.length / 2.0f, -cue.width / 2.0f, 0.0f, 1.0f
+	};
+
+	static const GLfloat Colors2[] = {
+		1.0f, 0.95f, 0.8f, 1.0f,
+		1.0f, 0.95f, 0.8f, 1.0f,
+		0.55f, 0.45f, 0.1f, 1.0f,
+		0.55f, 0.45f, 0.1f, 1.0f,
+	};
+
+	static const GLuint Indices2[] = {0, 1, 2, 3};
+
+	glGenVertexArrays(1, &VaoId2);         //  Generarea VAO si indexarea acestuia catre variabila VaoId2;
+	glBindVertexArray(VaoId2);
+
+	//  Se creeaza un buffer pentru VARFURI;
+	glGenBuffers(1, &VboId2);                                                        //  Generarea bufferului si indexarea acestuia catre variabila VboId2;
+	glBindBuffer(GL_ARRAY_BUFFER, VboId2);                                           //  Setarea tipului de buffer - atributele varfurilor;
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices2), Vertices2, GL_STATIC_DRAW);
+	//  Se asociaza atributul (0 = coordonate) pentru shader;
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+	//  Se creeaza un buffer pentru CULOARE;
+	glGenBuffers(1, &ColorBufferId2);
+	glBindBuffer(GL_ARRAY_BUFFER, ColorBufferId2);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Colors2), Colors2, GL_STATIC_DRAW);
+	//  Se asociaza atributul (1 =  culoare) pentru shader;
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+	//	Se creeaza un buffer pentru INDICI;
+	glGenBuffers(1, &EboId2);														//  Generarea bufferului si indexarea acestuia catre variabila EboId2;
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EboId2);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices2), Indices2, GL_STATIC_DRAW);
+
+}
+
 //  Elimina obiectele de tip shader dupa rulare;
 void DestroyShaders(void)
 {
@@ -216,10 +395,15 @@ void DestroyVBO(void)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDeleteBuffers(1, &VboId);
 	glDeleteBuffers(1, &ColorBufferId);
+	glDeleteBuffers(1, &VboId2);
+	glDeleteBuffers(1, &ColorBufferId2);
+	glDeleteBuffers(1, &EboId2);
 
 	//  Eliberaea obiectelor de tip VAO;
 	glBindVertexArray(0);
 	glDeleteVertexArrays(1, &VaoId);
+	glDeleteVertexArrays(1, &VaoId2);
+
 }
 
 //  Functia de eliberare a resurselor alocate de program;
@@ -234,6 +418,7 @@ void Initialize(void)
 {
 	glClearColor(1.0f, 1.0f, 0.75f, 0.0f);		//  Culoarea de fond a ecranului;
 	CreateVBO();								//  Trecerea datelor de randare spre bufferul folosit de shadere;
+	CreateCue(); // VAO pentru tac
 	CreateShaders();							//  Initilizarea shaderelor;
 	//	Instantierea variabilelor uniforme pentru a "comunica" cu shaderele;
 	myMatrixLocation = glGetUniformLocation(ProgramId, "myMatrix");
@@ -254,9 +439,7 @@ void RenderFunction(void)
 // matrRot = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0, 0.0, 1.0));	//	Roatie folosita la deplasarea patratului ROSU;
 
 	// DESENEZ BILE
-
-	//voi incerca sa mai modific aici
-
+	glBindVertexArray(VaoId);
 	for (int i = 0; i < BALL_COUNT; i++)
 	{
 		myMatrix = resizeMatrix * bile[i].matrTransl;
@@ -271,6 +454,14 @@ void RenderFunction(void)
 		glUniform1i(codColLocation, codCol);
 		glDrawArrays(GL_TRIANGLE_FAN, i * bile.size(), Ball::nrPuncte);
 	}
+
+	// DESENEZ TACUL
+	glBindVertexArray(VaoId2);
+	glm::mat4 cueTranslationMat = glm::translate(glm::mat4(1.0f), glm::vec3(cue.position, 0.0f));
+	myMatrix = resizeMatrix * cueTranslationMat;
+	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+	glUniform1i(codColLocation, 0);
+	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
 
 	glutSwapBuffers();	//	Inlocuieste imaginea deseneata in fereastra cu cea randata; 
 	glFlush();								//  Asigura rularea tuturor comenzilor OpenGL apelate anterior;
@@ -295,6 +486,7 @@ int main(int argc, char* argv[])
 	Initialize();						//  Setarea parametrilor necesari pentru fereastra de vizualizare; 
 	glutDisplayFunc(RenderFunction);	//  Desenarea scenei in fereastra;
 	glutMouseFunc(UseMouse);
+	glutMotionFunc(MouseMotion);
 	glutIdleFunc(IdleFunction);
 	glutCloseFunc(Cleanup);				//  Eliberarea resurselor alocate de program;
 
