@@ -43,13 +43,10 @@ int BALL_COUNT = 7;
 float dim_patrat = 30.0f;
 int codCol;
 
-
 //Pointer catre bila alba, may be usefull
 //Initializat in Initialize()
 Ball* whiteBall = NULL;
 
-
-// necesare pentru deplasarea tacului in scena
 glm::vec2 dragStartPos, cueStartPos;
 
 glm::vec2 screenToWorld(glm::vec2 mouseCoord) {
@@ -73,9 +70,6 @@ std::vector<Ball> createBalls() {
 std::vector<Ball> bile = createBalls();
 
 Cue cue(500.0f, 14.0f, 0.0f, -250.0f, &bile[6]);
-
-
-
 
 /// <summary>
 /// Verificam daca 2 bile au coliziune
@@ -124,7 +118,7 @@ static void check2DCollisions() {
 }
 
 
-bool startAnimation = false;
+bool startAnimation = true;
 
 /// <summary>
 /// Deplasarea virtuala a bilelor.
@@ -196,8 +190,12 @@ static void IdleFunction() {
 		cue.isHitting = false;
 		cue.stoppedHitting = false;
 		startAnimation = false;
+    
 		glClearColor(0.75f, 1.0f, 1.0f, 1.0f);
 		std::cout << "STOPPED\n"; // de completat cu controlul rundelor
+		
+		cue.BringToBall();
+		cue.canRotate = true;
 	}
 	
 
@@ -229,6 +227,7 @@ void UseMouse(int button, int state, int x, int y)
 				cue.isDragged = false;
 			}
 		}
+	case GLUT_RIGHT_BUTTON:
 			
 		break;
 	case GLUT_RIGHT_BUTTON:
@@ -242,6 +241,19 @@ void UseMouse(int button, int state, int x, int y)
 }
 
 void MouseMotion(int x, int y) {
+	if (cue.canRotate) {
+		glm::vec2 worldPos = screenToWorld(glm::vec2(x, y));
+		float angle = cue.GetBallAngle(worldPos);
+		cue.angle = angle;
+		cue.position = cue.PosToAngle(angle, 10.0f);
+		std::cout <<"Angle = " <<angle << '\n';
+		
+
+		glutPostRedisplay();
+
+	}
+
+
 	if (cue.isDragged) {
 		glm::vec2 worldPos = screenToWorld(glm::vec2(x, y));
 		glm::vec2 delta = worldPos - dragStartPos;
@@ -312,7 +324,6 @@ void CreateCue(void)
 		0.55f, 0.45f, 0.1f, 1.0f,
 		0.55f, 0.45f, 0.1f, 1.0f,
 	};
-
 	static const GLuint Indices2[] = {0, 1, 2, 3};
 
 	glGenVertexArrays(1, &VaoId2);         //  Generarea VAO si indexarea acestuia catre variabila VaoId2;
@@ -380,6 +391,8 @@ void Cleanup(void)
 void Initialize(void)
 {
 	whiteBall = &bile.back();
+	cue.SetBall(whiteBall);
+
 	glClearColor(0.082f, 0.36f, 0.08f, 1.0f);		//  Culoarea de fond a ecranului;
 	CreateVBO();								//  Trecerea datelor de randare spre bufferul folosit de shadere;
 	CreateCue(); // VAO pentru tac
@@ -422,11 +435,12 @@ void RenderFunction(void)
 	// DESENEZ TACUL
 	glBindVertexArray(VaoId2);
 	glm::mat4 cueTranslationMat = glm::translate(glm::mat4(1.0f), glm::vec3(cue.position, 0.0f));
-	myMatrix = resizeMatrix * cueTranslationMat;
+	glm::mat4 cueRotateMat = glm::rotate(glm::mat4(1.0f), cue.angle, glm::vec3(0.0, 0.0, 1.0));
+	myMatrix = resizeMatrix * cueTranslationMat*cueRotateMat;
 	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 	glUniform1i(codColLocation, 0);
 	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
-
+	myMatrix = resizeMatrix;
 	glutSwapBuffers();	//	Inlocuieste imaginea deseneata in fereastra cu cea randata; 
 	glFlush();								//  Asigura rularea tuturor comenzilor OpenGL apelate anterior;
 }
