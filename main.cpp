@@ -38,7 +38,7 @@ myMatrix, resizeMatrix, matrTransl, matrScale1, matrScale2, matrRot, matrDepl, n
 //	Variabile pentru proiectia ortogonala;
 float xMin = -400.0, xMax = 400.0f, yMin = -300.0f, yMax = 300.0f;
 GLsizei IndexCount;
-int BALL_COUNT = 7;
+int BALL_COUNT = 16;
 int codCol;
 //Pointer catre bila alba, may be usefull
 //Initializat in Initialize()
@@ -110,12 +110,17 @@ glm::vec2 screenToWorld(glm::vec2 mouseCoord) {
 
 std::vector<Ball> createBalls() {
 	std::vector<Ball> balls;
-	balls.emplace_back(Ball(1, 0.0, 0.0, 0.0, 0.0)); 
-	balls.emplace_back(Ball(2, 20.0, -10.0, 0.0, 0.0));
-	balls.emplace_back(Ball(1, 20.0, 10.0, 0.0, 0.0));
-	balls.emplace_back(Ball(2, 40.0, -20.0, 0.0, 0.0));
-	balls.emplace_back(Ball(1, 40.0, 0.0, 0.0, 0.0));
-	balls.emplace_back(Ball(2, 40.0, 20.0, 0.0, 0.0));
+	float Cx = 0.0;
+	float Cy = 0.0;
+	for (int line = 1; line <= 5; line++) {
+		Cy = -(line - 1) * Ball::r;
+		for (int nBall = 1; nBall <= line; nBall++) {
+			balls.emplace_back(Ball((line + nBall) % 2 + 1, Cx, Cy, 0.0, 0.0));
+			Cy += 2 * Ball::r;
+		}	
+		Cx += 2 * Ball::r;
+	}
+	balls[4].codCol = 4; // neagra
 	balls.emplace_back(Ball(3, -200.0, 0.0, 0.0, 0.0));//bila alba
 
 	return balls;
@@ -144,8 +149,6 @@ static void check2DCollisions() {
 
 				float overlap = (minDist - dist) / 2.0f + 1.0f;
 				glm::vec2 separation = { overlap * cos(theta), overlap * sin(theta) };
-				/*float separateX = overlap * cos(theta);
-				float separateY = overlap * sin(theta);*/
 				bile[i].position -= separation;
 				bile[j].position += separation;
 
@@ -259,6 +262,13 @@ static void IdleFunction() {
 		return;
 
 	CheckBallsInHoles();
+
+	if (bile[4].isInHole) {
+		std::cout << "Game Over!" << std::endl;
+		glutLeaveMainLoop(); 
+		return;
+	}
+
 	CheckCollisionEdges(); // INCLUDE DEPLASAREA BILELOR
 	check2DCollisions();
 	bool anyMoves = false;
@@ -283,7 +293,7 @@ static void IdleFunction() {
 		cue.stoppedHitting = false;
 		startAnimation = false;
     
-		std::cout << "STOPPED\n"; // de completat cu controlul rundelor
+		std::cout << "STOPPED\n"; // de completat cu controlul rundelor...daca e
 		
 		cue.BringToBall();
 		cue.canRotate = true;
@@ -559,19 +569,10 @@ void RenderFunction(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT);			//  Se curata ecranul OpenGL pentru a fi desenat noul continut;
 
-	//	Se translateaza de-a lungul axei Ox;
-// matrDepl = glm::translate(glm::mat4(1.0f), glm::vec3(0, 80.0, 0.0));		//	Se translateaza patratul ROSU fata de patratul ALBASTRU;
-// matrScale1 = glm::scale(glm::mat4(1.0f), glm::vec3(1.1, 0.3, 0.0));			//	Se scaleaza coordonatele initiale si se obtine dreptunghiul ALABSTRU;
-// matrScale2 = glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.0));		//	Se scaleaza coordonatele initiale si se obtine patratul ROSU;
-// matrRot = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0, 0.0, 1.0));	//	Roatie folosita la deplasarea patratului ROSU;
-
 	//DESENEZ MASA
 	glBindVertexArray(VaoId3);
 	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &normalMatrix[0][0]);
 	glDrawElements(GL_TRIANGLES, IndexCount, GL_UNSIGNED_INT, 0);
-
-
-
 
 	// DESENEZ BILE
 	glBindVertexArray(VaoId);
@@ -593,7 +594,6 @@ for(auto& index : pointIndexes){
 		glUniform1i(codColLocation, codCol);
 		glDrawArrays(GL_TRIANGLE_FAN, index * Ball::nrPuncte, Ball::nrPuncte);
 	}
-
 
 	// DESENEZ TACUL
 	glBindVertexArray(VaoId2);
@@ -617,8 +617,8 @@ int main(int argc, char* argv[])
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);					//	Modul de afisare al ferestrei, se foloseste un singur buffer de afisare si culori RGB;
 	glutInitWindowSize(winWidth, winHeight);						//  Dimensiunea ferestrei;
 	glutInitWindowPosition(100, 100);								//  Pozitia initiala a ferestrei;
-	glutCreateWindow("Patratul rotitor");		//	Creeaza fereastra de vizualizare, indicand numele acesteia;
-
+	glutCreateWindow("Billiard2D");		//	Creeaza fereastra de vizualizare, indicand numele acesteia;
+	
 	//	Se initializeaza GLEW si se verifica suportul de extensii OpenGL modern disponibile pe sistemul gazda;
 	//  Trebuie initializat inainte de desenare;
 
