@@ -138,12 +138,11 @@ static void check2DCollisions() {
 			//std::cout << "Distanta dintre bile: " << dist << " suma razelor: " << minDist << std::endl;
 			if (dist < minDist) {
 
-
 				// unghiul dat de dreapta care uneste centrele celor doua bile si Ox
 				float theta = atan2((bile[j].position.y - bile[i].position.y), (bile[j].position.x - bile[i].position.x));
 				//std::cout << "theta = " << theta << std::endl;
 
-				float overlap = (minDist - dist) / 2.0f;
+				float overlap = (minDist - dist) / 2.0f + 1.0f;
 				glm::vec2 separation = { overlap * cos(theta), overlap * sin(theta) };
 				/*float separateX = overlap * cos(theta);
 				float separateY = overlap * sin(theta);*/
@@ -277,6 +276,8 @@ static void IdleFunction() {
 	{
 		std::cout << "White ball X=" << whiteBall->position.x << " Vx=" << whiteBall->v.x << std::endl;
 		std::cout << "White ball Y=" << whiteBall->position.y << " Vy=" << whiteBall->v.y << std::endl;
+		for (auto &b : bile)
+			b.v = glm::vec2(0.0, 0.0);
 		whiteBall->v = glm::vec2(0.0, 0.0);
 		cue.isHitting = false;
 		cue.stoppedHitting = false;
