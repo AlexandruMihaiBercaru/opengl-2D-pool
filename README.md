@@ -1,3 +1,7 @@
 
-![Joc](https://github.com/user-attachments/assets/3074e93f-a7b2-4507-bbce-880fb38cc01e)  
+<p align="center">
+  <img src="https://github.com/AlexandruMihaiBercaru/opengl-2D-pool/blob/main/Joc.jpg" />
+</p>
+
+
 
